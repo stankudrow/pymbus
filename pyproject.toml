@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "pymbus"
+version = "0.1.0"
+description = "Python Meter-Bus Package2"
+authors = ["Stanley Kudrow <stankudrow@reply.no>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+
+
+[tool.poetry.group.lint.dependencies]
+mypy = "^1.11.2"
+ruff = "^0.6.4"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.2"
+pytest-asyncio = "^0.24.0"
+pytest-cov = "^5.0.0"
+pytest-mock = "^3.14.0"
+pytest-random-order = "^1.1.1"
+pytest-xdist = "^3.6.1"
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.paths]
+source = ["pymbus"]
+
+[tool.coverage.report]
+fail_under = 80
+precision = 0
+skip_covered = true
+skip_empty = true
+show_missing = true
+
+[tool.coverage.html]
+skip_empty = true
+title = "Python Meter-Bus Coverage Report"
+
+[tool.pytest.ini_options]
+minversion = "8"
+addopts = "-s -vvv --cov=pymbus --cov-report html --random-order"
+testpaths = ["tests"]
+
+[tool.ruff]
+extend-exclude = [
+    "assets",
+]
+line-length = 80
+respect-gitignore = true
+target-version = "py312"
+
+[tool.ruff.lint]
+extend-select = ["I", "F"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
