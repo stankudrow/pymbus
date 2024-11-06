@@ -72,9 +72,8 @@ def test_parse_date(hexdata: str, dd: date):
     bindata = bytearray.fromhex(hexdata)
     integers = list(bindata)
 
-    assert Date.from_binary(bindata) == dd
+    assert Date.from_bytes(bindata) == dd
     assert Date.from_hexstring(hexdata) == dd
-    assert Date.from_integers(integers) == dd
 
     assert parse_date(integers) == dd
 
@@ -158,9 +157,8 @@ def test_parse_time(hexdata: str, tt: time):
     bindata = bytearray.fromhex(hexdata)
     integers = list(bindata)
 
-    assert Time.from_binary(bindata) == tt
+    assert Time.from_bytes(bindata) == tt
     assert Time.from_hexstring(hexdata) == tt
-    assert Time.from_integers(integers) == tt
 
     assert parse_time(integers) == tt
 
@@ -307,9 +305,8 @@ def test_parse_datetime(hexdata: str, dt: datetime):
     bindata = bytearray.fromhex(hexdata)
     integers = list(bindata)
 
-    assert DateTime.from_binary(bindata) == dt
+    assert DateTime.from_bytes(bindata) == dt
     assert DateTime.from_hexstring(hexdata) == dt
-    assert DateTime.from_integers(integers) == dt
 
     assert parse_datetime(integers) == dt
 

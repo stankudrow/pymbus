@@ -2,8 +2,10 @@ from collections.abc import Iterator
 
 from pymbus.exceptions import MBusError
 from pymbus.telegrams.base import (
-    TelegramBlock,
     TelegramBytesType,
+)
+from pymbus.telegrams.base import (
+    TelegramContainer as TelegramBlock,
 )
 from pymbus.telegrams.fields.data_info import (
     DataInformationField as DIF,

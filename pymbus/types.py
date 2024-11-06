@@ -48,7 +48,6 @@ from typing import Self
 from pymbus.constants import BIG_ENDIAN, BYTE, NIBBLE
 from pymbus.exceptions import MBusError
 
-# TODO: type A and E
 # TODO: a unified integer type: as_uint, as_bcd etc.
 
 BytesType = bytes | bytearray | Iterable[int]
@@ -57,15 +56,59 @@ BytesType = bytes | bytearray | Iterable[int]
 ## integer types section
 
 
+def parse_bcd_uint(ibytes: BytesType) -> int:
+    """Returns the unsigned integer from `ibytes`.
+
+    BCD = Binary-Coded Decimal.
+    The "Unsigned Integer BCD" type = "Type A".
+    The bytes are parsed along the Big endian order.
+
+    The function is greedy.
+
+    Parameters
+    ----------
+    ibytes: BytesType
+        the sequence of bytes for "Type A" parsing
+
+    Raises
+    ------
+    MBusDecodeError
+        if an empty byte sequence is given
+
+    Returns
+    -------
+    int
+    """
+
+    _bytes = bytes(reversed(ibytes))
+    if not _bytes:
+        msg = "cannot parse empty bytes"
+        raise MBusError(msg)
+
+    msp, lsp = 0b1111_0000, 0b0000_1111
+    masks = (lsp, msp)
+
+    number, power = 0, 0
+    for byte in _bytes:
+        for mask in masks:
+            digit = byte & mask
+            number += digit * 10**power
+            power += 1
+
+    return number
+
+
 def parse_int(ibytes: BytesType) -> int:
-    """Returns the signed binary integer from `bytez`.
+    """Returns the signed integer from `ibytes`.
 
     The "Binary Integer" type = "Type B".
     The bytes are parsed along the Big endian order.
 
+    The function is greedy.
+
     Parameters
     ----------
-    ibytes: bytes | bytearray
+    ibytes: BytesType
         the sequence of bytes for "Type B" parsing
 
     Raises
@@ -102,14 +145,16 @@ def parse_int(ibytes: BytesType) -> int:
 
 
 def parse_uint(ibytes: BytesType) -> int:
-    """Returns the unsigned integer from `bytez`.
+    """Returns the unsigned integer from `ibytes`.
 
     The "Unsigned Integer" type = "Type C".
     The bytes are parsed along the Big endian order.
 
+    The function is greedy.
+
     Parameters
     ----------
-    ibytes: bytes | bytearray
+    ibytes: BytesType
         the sequence of bytes for "Type C" parsing
 
     Raises
@@ -130,18 +175,20 @@ def parse_uint(ibytes: BytesType) -> int:
     return int.from_bytes(_bytes, byteorder=BIG_ENDIAN, signed=False)
 
 
-## boolean sectio
+## boolean section
 
 
 def parse_bool(ibytes: BytesType) -> bool:
-    """Returns the boolean value from `bytez`.
+    """Returns the boolean value from `ibytes`.
 
     The "Boolean" type = "Type D".
     The bytes are parsed along the Big endian order.
 
+    The function is greedy.
+
     Parameters
     ----------
-    ibytes: bytes | bytearray
+    ibytes: BytesType
         the sequence of bytes for "Type D" parsing
 
     Raises
@@ -155,6 +202,70 @@ def parse_bool(ibytes: BytesType) -> bool:
     """
 
     return bool(parse_uint(ibytes))
+
+
+## types and units information (Type E = Compound CP16)
+
+
+class UnitType:
+    """Type E = Compound CP16: types and units information."""
+
+    @classmethod
+    def from_bytes(cls, frame: BytesType) -> Self:
+        """Return a `UnitType` from an array of bytes."""
+
+        return cls(frame)
+
+    @classmethod
+    def from_hexstring(cls, hex: str) -> Self:
+        """Return a `UnitType` from a hexadecimal string."""
+
+        barr = bytearray.fromhex(hex)
+        return cls.from_bytes(barr)
+
+    def __init__(self, ibytes: BytesType):
+        it = iter(ibytes)
+        try:
+            _bytes = bytes([next(it) for _ in range(2)])
+        except StopIteration as e:
+            msg = f"invalid length for {ibytes}"
+            raise MBusError(msg) from e
+
+        unit_mask, media_mask = 0b1100_0000, 0b0011_1111
+        self._unit1 = _bytes[1] & unit_mask
+        self._unit2 = _bytes[0] & unit_mask
+        self._media = bytes(
+            [
+                _bytes[0] & media_mask,
+                _bytes[1] & media_mask,
+            ]
+        )
+
+
+def parse_unit_type(ibytes: BytesType) -> UnitType:
+    """Returns the boolean value from `ibytes`.
+
+    The "Boolean" type = "Type D".
+    The bytes are parsed along the Big endian order.
+
+    The function is NOT greedy.
+
+    Parameters
+    ----------
+    ibytes: BytesType
+        the sequence of bytes for "Type E" parsing
+
+    Raises
+    ------
+    MBusDecodeError
+        if an empty byte sequence is given
+
+    Returns
+    -------
+    UnitType
+    """
+
+    return UnitType(ibytes)
 
 
 ## date, time and datetime types section
@@ -215,12 +326,21 @@ def get_date(ibytes: BytesType) -> date:
 
 
 def parse_date(frame: BytesType) -> date:
-    """Return the Python date from a byte iterator.
+    """Return the Python date from `frame`.
+
+    The "Date" type = Type G (Compound CP16).
+
+    The function is NOT greedy.
 
     Parameters
     ----------
-    frame: Iterator[int]
+    frame: BytesType
         a frame of bytes for date parsing
+
+    Raises
+    ------
+    MBusError:
+        invalid frame length
 
     Returns
     -------
@@ -228,9 +348,14 @@ def parse_date(frame: BytesType) -> date:
     """
 
     it = iter(frame)
-    lst = [next(it) for _ in range(2)]
+    msg = f"frame length mismatch for {frame}"
 
-    return get_date(bytes(lst))
+    try:
+        lst = [next(it) for _ in range(2)]
+    except StopIteration as e:
+        raise MBusError(msg) from e
+
+    return get_date(lst)
 
 
 class Date:
@@ -243,7 +368,7 @@ class Date:
         return cls(year=date_.year, month=date_.month, day=date_.day)
 
     @classmethod
-    def from_binary(cls, frame: bytes | bytearray) -> Self:
+    def from_bytes(cls, frame: BytesType) -> Self:
         """Return a `Date` from an array of bytes."""
 
         date_ = parse_date(frame)
@@ -254,14 +379,7 @@ class Date:
         """Return a `Date` from a hexadecimal string."""
 
         barr = bytearray.fromhex(hex)
-        return cls.from_binary(barr)
-
-    @classmethod
-    def from_integers(cls, ints: Iterable[int]) -> Self:
-        """Return a `Date` from a sequence of integers."""
-
-        barr = bytearray(iter(ints))
-        return cls.from_binary(barr)
+        return cls.from_bytes(barr)
 
     def __init__(self, year: int, month: int, day: int):
         self._date = date(year=year, month=month, day=day)
@@ -343,12 +461,16 @@ def get_time(ibytes: BytesType) -> time:
 
 
 def parse_time(frame: BytesType) -> time:
-    """Return the Python time from a byte iterator.
+    """Return the Python time from `frame`.
+
+    Not a part of standard Meter-Bus types.
+
+    The function is NOT greedy.
 
     Parameters
     ----------
-    frame: Iterator[int]
-        a frame of bytes for time parsing
+    frame: BytesType
+        a frame of bytes for date parsing
 
     Returns
     -------
@@ -369,7 +491,7 @@ def parse_time(frame: BytesType) -> time:
     if sec_byte:
         lst += [sec_byte]
 
-    return get_time(bytes(lst))
+    return get_time(lst)
 
 
 class Time:
@@ -390,7 +512,7 @@ class Time:
         )
 
     @classmethod
-    def from_binary(cls, frame: bytes | bytearray) -> Self:
+    def from_bytes(cls, frame: BytesType) -> Self:
         """Return a `Time` from an array of bytes."""
 
         time_ = parse_time(frame)
@@ -401,14 +523,7 @@ class Time:
         """Return a `Time` from a hexadecimal string."""
 
         barr = bytearray.fromhex(hex)
-        return cls.from_binary(barr)
-
-    @classmethod
-    def from_integers(cls, it: Iterable[int]) -> Self:
-        """Return a `Time` from an iterable of integers."""
-
-        time_ = parse_time(iter(it))
-        return cls.from_time(time_)
+        return cls.from_bytes(barr)
 
     def __init__(self, hour: int, minute: int, second: int = 0):
         self._time = time(hour=hour, minute=minute, second=second)
@@ -484,12 +599,21 @@ def get_datetime(ibytes: BytesType) -> datetime:
 
 
 def parse_datetime(frame: BytesType) -> datetime:
-    """Return the Python datetime from a byte iterator.
+    """Return the Python date from `frame`.
+
+    The "DateTime" type = Type F (Compound CP32).
+
+    The function is NOT greedy.
 
     Parameters
     ----------
-    frame: Iterator[int]
-        a frame of bytes for datetime parsing
+    frame: BytesType
+        a frame of bytes for date parsing
+
+    Raises
+    ------
+    MBusError:
+        invalid frame length
 
     Returns
     -------
@@ -497,12 +621,11 @@ def parse_datetime(frame: BytesType) -> datetime:
     """
 
     it = iter(frame)
+    msg = f"frame length mismatch for {frame}"
 
     try:
         lst = [next(it) for _ in range(4)]
     except StopIteration as e:
-        fr = list(iter(frame))
-        msg = f"frame length mismatch for {fr}"
         raise MBusError(msg) from e
 
     try:
@@ -530,7 +653,7 @@ class DateTime:
         )
 
     @classmethod
-    def from_binary(cls, frame: bytes | bytearray) -> Self:
+    def from_bytes(cls, frame: BytesType) -> Self:
         """Return a `DateTime` from an array of bytes."""
 
         datetime_ = parse_datetime(frame)
@@ -540,15 +663,8 @@ class DateTime:
     def from_hexstring(cls, hex: str) -> Self:
         """Return a `DateTime` from a hexadecimal string."""
 
-        barr = bytearray.fromhex(hex)
-        return cls.from_binary(barr)
-
-    @classmethod
-    def from_integers(cls, it: Iterable[int]) -> Self:
-        """Return a `DateTime` from an iterable of integers."""
-
-        datetime_ = parse_datetime(iter(it))
-        return cls.from_datetime(datetime_)
+        barr = bytes.fromhex(hex)
+        return cls.from_bytes(barr)
 
     def __init__(
         self,
