@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pymbus"
-version = "0.2.0"
+version = "0.1.1"
 description = "Python Meter-Bus Package"
 authors = ["Stanley Kudrow <stankudrow@reply.no>"]
 license = "MIT"
