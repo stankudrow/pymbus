@@ -1,0 +1,22 @@
+default_language_version:
+  python: python3.10
+fail_fast: true
+files: '^.*\.py$'  # must be a valid Python regex
+minimum_pre_commit_version: '4.1.0'
+repos:
+- repo: local
+  hooks:
+  - id: ruff-check
+    alias: lint
+    name: "ruff check files.py"
+    language: python
+    entry: ruff check
+    verbose: true
+- repo: local
+  hooks:
+  - id: ruff-format
+    alias: format
+    name: "ruff format files.py"
+    language: python
+    entry: ruff format --check
+    verbose: true
