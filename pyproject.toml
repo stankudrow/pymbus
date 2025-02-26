@@ -1,0 +1,103 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pymbus"
+version = "0.1.0"
+description = "Python Meter-Bus codec."
+authors = [
+    { name = "Stanley Kudrow", email = "stankudrow@reply.no" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+]
+keywords = ["meter-bus", "m-bus"]
+dependencies = []
+
+[dependency-groups]
+lint = [
+    "ruff>=0.9.7",
+]
+test = [
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.25.3",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-random-order>=1.1.1",
+    "pytest-xdist>=3.6.1",
+]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.paths]
+source = ["src"]
+
+[tool.coverage.report]
+fail_under = 83
+precision = 0
+skip_covered = true
+skip_empty = true
+show_missing = true
+
+[tool.coverage.html]
+skip_empty = true
+title = "Python Meter-Bus Coverage Report"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-s",
+    "-vvv",
+    "--cov=src",
+    "--maxfail=1",
+    "--random-order",
+    "--strict-config",
+    "--strict-markers",
+]
+xfail_strict = true
+testpaths = ["tests"]
+
+[tool.ruff]
+extend-exclude = [
+    "assets",
+]
+line-length = 80
+respect-gitignore = true
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "A",  # flake8-builtins
+    "B",  # flake8-bugbear
+    "BLE",  # flake8-blind-except
+    "C4",  # flake8-comprehensions
+    "DTZ",  # flake8-datetimez
+    "E",  # pycodestyle
+    "EM",  # flake8-errmsg
+    "F",  # pyflakes
+    "FBT",  # flake8-boolean-trap
+    "I",  # isort
+    "ICN",  # flake8-import-conventions
+    "ISC",  # flake8-implicit-str-concat
+    "T20", # flake8-print
+]
+fixable = [
+    "I",  # isort
+    "ICN",  # flake8-import-conventions
+    "ISC",  # flake8-implicit-str-concat
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**/*.py" = ["FBT001"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
