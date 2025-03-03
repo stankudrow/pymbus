@@ -1,9 +1,6 @@
 name: Python Meter-Bus CI
 
 on:
-  push:
-    paths:
-      - '.github/workflows/ci.yaml'
   pull_request:
     branches:
       - main
