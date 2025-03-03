@@ -1,5 +1,7 @@
-BYTE = 8
-NIBBLE = 4
+"""Meter-Bus (M-Bus) constants."""
 
-BIG_ENDIAN = "big"
-LITTLE_ENDIAN = "little"
+BYTE: int = 8
+NIBBLE: int = 4
+
+BIG_ENDIAN: str = "big"
+LITTLE_ENDIAN: str = "little"
