@@ -1,6 +1,5 @@
-from collections.abc import Generator, Iterable
+from collections.abc import Iterable, Iterator
 
-# from typing import Self
 from pymbus.exceptions import MBusError
 
 
@@ -34,14 +33,14 @@ class TelegramField:
     A Field is a part of blocks, frames and other Telegram containers.
     """
 
-    def __init__(self, byte: int):
+    def __init__(self, byte: int) -> None:
         self._byte = validate_byte(byte)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         sbyte = self.byte
         if isinstance(other, TelegramField):
-            return sbyte == other.byte
-        return sbyte == other
+            other = other.byte
+        return bool(sbyte == other)
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
@@ -54,28 +53,25 @@ class TelegramField:
         return self._byte
 
 
-TelegramBytesType = bytes | bytearray | Iterable[int | TelegramField]
+TelegramByteType = int | TelegramField
 
 
-def parse_byte(byte_like: int | TelegramField) -> int:
+def parse_byte(value: TelegramByteType) -> int:
     """Return the byte value from the `byte_like` argument.
-
-    If byte_like is a TelegramField (TF),
-    then its byte property get called.
 
     Parameters
     ----------
-    byte_like: int | TelegramField (TF)
-        either a byte-like integer or a TF as a byte wrapper
+    value: TelegramByteType
+        either a byte-like integer or a TelegramField instance
 
     Returns
     -------
     int
     """
 
-    if isinstance(byte_like, TelegramField):
-        return byte_like.byte
-    return byte_like
+    if isinstance(value, TelegramField):
+        return value.byte
+    return validate_byte(value)
 
 
 class TelegramContainer:
@@ -86,50 +82,46 @@ class TelegramContainer:
     """
 
     @classmethod
-    def from_hexstring(cls, hexstr: str):
+    def from_hexstring(cls, hexstr: str) -> "TelegramContainer":
         """Return a class instance from a hexadecimal string."""
 
         barr = bytearray.fromhex(hexstr)
         return cls(barr)
 
     @classmethod
-    def from_integers(cls, ints: Iterable[int]):
+    def from_integers(cls, ints: Iterable[int]) -> "TelegramContainer":
         """Return a class instance from a sequence of integers."""
 
         barr = bytearray(iter(ints))
         return cls(barr)
 
-    def __init__(self, ibytes: TelegramBytesType) -> None:
-        self._fields = []
-        for ib in ibytes:
-            field = ib if isinstance(ib, TelegramField) else TelegramField(ib)
-            self._fields.append(field)
+    def __init__(self, ibytes: Iterable[TelegramByteType]) -> None:
+        self._fields: list[TelegramField] = [
+            ibyte if isinstance(ibyte, TelegramField) else TelegramField(ibyte)
+            for ibyte in ibytes
+        ]
 
-    def __eq__(self, other) -> bool:
-        sfields = self.fields
+    def __eq__(self, other: object) -> bool:
+        sfields = self._fields
         if isinstance(other, TelegramContainer):
-            return sfields == other.fields
+            other = other._fields
         return sfields == other
 
     def __getitem__(self, idx: int) -> TelegramField:
         return self._fields[idx]
 
-    def __iter__(self) -> Generator[None, None, TelegramField]:
-        yield from self.fields
+    def __iter__(self) -> Iterator[TelegramField]:
+        yield from self._fields
 
     def __len__(self) -> int:
-        return len(self.fields)
+        return len(self._fields)
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
-        return f"{cls_name}(fields={self.fields})"
+        return f"{cls_name}(fields={self._fields})"
 
     def __str__(self) -> str:
         return str(list(self))
 
-    @property
-    def fields(self) -> list[TelegramField]:
-        return self._fields
-
     def as_bytes(self) -> bytes:
-        return bytes(field.byte for field in self.fields)
+        return bytes(field.byte for field in self._fields)
