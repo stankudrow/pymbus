@@ -1,11 +1,14 @@
-.PHONY: check lint test
+.PHONY: check format lint test
 
 check:
 	ruff check
 	ruff format --check
+	mypy
 
-lint:
+format:
 	ruff format
+
+lint: format
 	ruff check --fix
 
 test:
