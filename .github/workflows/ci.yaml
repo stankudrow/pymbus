@@ -31,7 +31,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install PyMBus
-        run: uv sync --group lint --group test
+        run: uv pip install ".[dev]"
 
       - name: Build
         run: uv build

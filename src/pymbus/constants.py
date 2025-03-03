@@ -1,5 +1,9 @@
-BYTE = 8
-NIBBLE = 4
+"""Meter-Bus (M-Bus) constants."""
 
-BIG_ENDIAN = "big"
-LITTLE_ENDIAN = "little"
+from typing import Literal
+
+BYTE: int = 8
+NIBBLE: int = 4
+
+BIG_ENDIAN: Literal["big"] = "big"
+LITTLE_ENDIAN: Literal["little"] = "little"

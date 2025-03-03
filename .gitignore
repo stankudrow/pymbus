@@ -87,10 +87,15 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
 # Cython debug symbols
 cython_debug/
 
-# Ruff stuff:
+# ruff stuff:
 .ruff_cache/
 
 # PyPI configuration file
