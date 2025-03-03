@@ -40,7 +40,7 @@ class TelegramField:
         sbyte = self.byte
         if isinstance(other, TelegramField):
             other = other.byte
-        return bool(sbyte == other)
+        return sbyte == other
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__

@@ -1,3 +1,6 @@
+"""Meter-Bus (M-Bus) exception classes."""
+
+
 class MBusError(Exception):
     """Meter-Bus Base Error."""
 
