@@ -78,6 +78,8 @@ addopts = [
     "-s",
     "--strict-config",
     "--strict-markers",
+    "--cov",
+    "--cov-report=html",
     "--random-order"
 ]
 xfail_strict = true
