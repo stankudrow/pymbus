@@ -95,7 +95,7 @@ def test_short_frame_init(data: Iterable, expectation: AbstractContextManager):
 
 
 def test_short_frame_repr_str():
-    ibytes = [
+    ibytes: list[int | TelegramField] = [
         SHORT_FRAME_START_BYTE,
         TelegramField(1),
         2,
@@ -155,7 +155,7 @@ def test_control_frame_init(
 
 
 def test_control_frame_repr_str():
-    ibytes = [
+    ibytes: list[int | TelegramField] = [
         CONTROL_FRAME_START_BYTE,
         TelegramField(1),
         2,
@@ -233,7 +233,7 @@ def test_long_frame_init(data: Iterable, expectation: AbstractContextManager):
 
 
 def test_long_frame_repr_str():
-    ibytes = [
+    ibytes: list[int | TelegramField] = [
         CONTROL_FRAME_START_BYTE,
         TelegramField(1),
         2,

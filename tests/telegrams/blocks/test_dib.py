@@ -1,6 +1,6 @@
 from collections.abc import Iterable
+from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
-from typing import ContextManager
 
 import pytest
 
@@ -22,7 +22,9 @@ from pymbus.telegrams.fields.data_info import (
         ([0b1000_1111, 0b0111_0000], does_not_raise()),
     ],
 )
-def test_dib_init_from_integers(ints: list[int], expectation: ContextManager):
+def test_dib_init_from_integers(
+    ints: list[int], expectation: AbstractContextManager
+):
     with expectation:
         dib = DIB.from_integers(ints)
 
@@ -36,7 +38,9 @@ def test_dib_init_from_integers(ints: list[int], expectation: ContextManager):
         ("8f 70", does_not_raise()),
     ],
 )
-def test_dib_init_from_hexstring(hexstr: str, expectation: ContextManager):
+def test_dib_init_from_hexstring(
+    hexstr: str, expectation: AbstractContextManager
+):
     with expectation:
         dib = DIB.from_hexstring(hexstr)
 
@@ -84,7 +88,7 @@ def test_dib_init_from_hexstring(hexstr: str, expectation: ContextManager):
         ),
     ],
 )
-def test_dib_init(ints: list[int], expectation: ContextManager):
+def test_dib_init(ints: list[int], expectation: AbstractContextManager):
     with expectation:
         dib = DIB(ints)
 
@@ -92,10 +96,10 @@ def test_dib_init(ints: list[int], expectation: ContextManager):
 
 
 @pytest.mark.parametrize(
-    ("it",),
-    [([0b1000_1111, 0b0111_0000],), ([0b1000_1111, 0b0111_0000],)],
+    "it",
+    [[0b1000_1111, 0b0111_0000]],
 )
-def test_dib_repr_and_str(it: Iterable):
+def test_dib_repr_and_str(it: list[int]):
     dib = DIB(it)
 
     fields = dib.fields

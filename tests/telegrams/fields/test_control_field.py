@@ -1,5 +1,5 @@
+from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
-from typing import ContextManager
 
 import pytest
 
@@ -18,7 +18,7 @@ from pymbus.telegrams.fields.control import (
         (256, pytest.raises(MBusError)),
     ],
 )
-def test_field_init(byte: int, expectation: ContextManager):
+def test_field_init(byte: int, expectation: AbstractContextManager):
     with expectation:
         field = ControlField(byte)
 
@@ -49,7 +49,7 @@ def test_code_property(byte: int, answer: int):
     ],
 )
 def test_fcv_property(
-    byte: int, answer: None | int, expectation: ContextManager
+    byte: int, answer: None | int, expectation: AbstractContextManager
 ):
     with expectation:
         cf = ControlField(byte)
@@ -69,7 +69,7 @@ def test_fcv_property(
     ],
 )
 def test_fcb_property(
-    byte: int, answer: None | int, expectation: ContextManager
+    byte: int, answer: None | int, expectation: AbstractContextManager
 ):
     with expectation:
         cf = ControlField(byte)
@@ -89,7 +89,7 @@ def test_fcb_property(
     ],
 )
 def test_dfc_property(
-    byte: int, answer: None | int, expectation: ContextManager
+    byte: int, answer: None | int, expectation: AbstractContextManager
 ):
     with expectation:
         cf = ControlField(byte)
@@ -109,7 +109,7 @@ def test_dfc_property(
     ],
 )
 def test_acd_property(
-    byte: int, answer: None | int, expectation: ContextManager
+    byte: int, answer: None | int, expectation: AbstractContextManager
 ):
     with expectation:
         cf = ControlField(byte)

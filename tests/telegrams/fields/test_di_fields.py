@@ -1,5 +1,5 @@
+from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
-from typing import ContextManager
 
 import pytest
 
@@ -23,7 +23,7 @@ from pymbus.telegrams.fields.data_info import (
         (256, pytest.raises(MBusError)),
     ],
 )
-def test_dif_init(byte: int, expectation: ContextManager):
+def test_dif_init(byte: int, expectation: AbstractContextManager):
     with expectation:
         DIF(byte=byte)
 
@@ -103,7 +103,7 @@ def test_dif_data_field(byte: int, data_field: int):
         (256, pytest.raises(MBusError)),
     ],
 )
-def test_dife_init(byte: int, expectation: ContextManager):
+def test_dife_init(byte: int, expectation: AbstractContextManager):
     with expectation:
         DIFE(byte=byte)
 

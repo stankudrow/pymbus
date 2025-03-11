@@ -1,5 +1,5 @@
+from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
-from typing import ContextManager
 
 import pytest
 
@@ -23,7 +23,7 @@ from pymbus.telegrams.fields.value_info import (
         (256, pytest.raises(MBusError)),
     ],
 )
-def test_vif_init(byte: int, expectation: ContextManager):
+def test_vif_init(byte: int, expectation: AbstractContextManager):
     with expectation:
         VIF(byte=byte)
 
@@ -73,7 +73,7 @@ def test_vif_unit(byte: int, unit: int):
         (256, pytest.raises(MBusError)),
     ],
 )
-def test_vife_init(byte: int, expectation: ContextManager):
+def test_vife_init(byte: int, expectation: AbstractContextManager):
     with expectation:
         VIFE(byte=byte)
 

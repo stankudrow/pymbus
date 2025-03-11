@@ -20,8 +20,13 @@ from pymbus.telegrams.codes.value_info import (
 from pymbus.telegrams.fields.value_info import ValueInformationField as VIF
 
 
-def _assert_vif_code(vif: VIF, code_type: VIFC | None, multiplier: float):
+def _assert_vif_code(
+    vif: VIF, code_type: VIFC | None, multiplier: float
+) -> None:
     res = get_vif_code(vif)
+    if res is None:
+        msg = f"no match for {vif}"
+        raise ValueError(msg)
 
     assert type(res) is code_type
     assert res.multiplier == multiplier
@@ -181,6 +186,9 @@ def test_mass_vifcodes(vif: VIF, code_type: VIFC | None, multiplier: float):
 )
 def test_ontime_vifcodes(vif: VIF, code_type: VIFC | None, unit: str):
     res = get_vif_code(vif)
+    if res is None:
+        msg = f"no match for {vif}"
+        raise ValueError(msg)
 
     assert type(res) is code_type
     assert res.UNIT == unit

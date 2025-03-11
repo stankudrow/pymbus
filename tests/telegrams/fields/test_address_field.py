@@ -1,5 +1,5 @@
+from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
-from typing import ContextManager
 
 import pytest
 
@@ -24,7 +24,7 @@ from pymbus.telegrams.fields.address import (
         (256, pytest.raises(MBusError)),
     ],
 )
-def test_address_field_init(byte: int, expectation: ContextManager):
+def test_address_field_init(byte: int, expectation: AbstractContextManager):
     with expectation:
         field = AddressField(byte)
 
@@ -39,12 +39,13 @@ def test_is_unconfigured_slave():
 
 
 @pytest.mark.parametrize(
-    ("byte",),
+    "byte",
     [
-        (AF_SLAVE_MIN_RANGE_VALUE_BYTE,),
-        (AF_SLAVE_MIN_RANGE_VALUE_BYTE + 1,),
-        (AF_SLAVE_MAX_RANGE_VALUE_BYTE - 1,),
-        (AF_SLAVE_MAX_RANGE_VALUE_BYTE,),
+        AF_UNCONFIGURED_SLAVE_BYTE,
+        AF_SLAVE_MIN_RANGE_VALUE_BYTE,
+        AF_SLAVE_MIN_RANGE_VALUE_BYTE + 1,
+        AF_SLAVE_MAX_RANGE_VALUE_BYTE - 1,
+        AF_SLAVE_MAX_RANGE_VALUE_BYTE,
     ],
 )
 def test_is_configured_slave(byte: int):
@@ -55,13 +56,13 @@ def test_is_configured_slave(byte: int):
 
 
 @pytest.mark.parametrize(
-    ("byte",),
+    "byte",
     [
-        (AF_UNCONFIGURED_SLAVE_BYTE,),
-        (AF_SLAVE_MIN_RANGE_VALUE_BYTE,),
-        (AF_SLAVE_MIN_RANGE_VALUE_BYTE + 1,),
-        (AF_SLAVE_MAX_RANGE_VALUE_BYTE - 1,),
-        (AF_SLAVE_MAX_RANGE_VALUE_BYTE,),
+        AF_UNCONFIGURED_SLAVE_BYTE,
+        AF_SLAVE_MIN_RANGE_VALUE_BYTE,
+        AF_SLAVE_MIN_RANGE_VALUE_BYTE + 1,
+        AF_SLAVE_MAX_RANGE_VALUE_BYTE - 1,
+        AF_SLAVE_MAX_RANGE_VALUE_BYTE,
     ],
 )
 def test_is_slave(byte: int):

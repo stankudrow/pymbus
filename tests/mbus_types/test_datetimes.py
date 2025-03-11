@@ -33,7 +33,7 @@ from pymbus.mbtypes import (
     ],
 )
 def test_date_init(
-    year: int, month: int, day: None | int, expectation: AbstractContextManager
+    year: int, month: int, day: int, expectation: AbstractContextManager
 ):
     with expectation:
         date_ = Date(year=year, month=month, day=day)
