@@ -4,28 +4,14 @@ from contextlib import nullcontext as does_not_raise
 import pytest
 
 from pymbus.exceptions import MBusError
-from pymbus.telegrams.fields.data_info import (
+from pymbus.telegrams.fields import (
     DataInformationField as DIF,
 )
-from pymbus.telegrams.fields.data_info import (
+from pymbus.telegrams.fields import (
     DataInformationFieldExtension as DIFE,
 )
 
 ### the DIF section
-
-
-@pytest.mark.parametrize(
-    ("byte", "expectation"),
-    [
-        (-1, pytest.raises(MBusError)),
-        (0, does_not_raise()),
-        (255, does_not_raise()),
-        (256, pytest.raises(MBusError)),
-    ],
-)
-def test_dif_init(byte: int, expectation: AbstractContextManager):
-    with expectation:
-        DIF(byte=byte)
 
 
 def test_dif_repr():

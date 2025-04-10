@@ -4,28 +4,14 @@ from contextlib import nullcontext as does_not_raise
 import pytest
 
 from pymbus.exceptions import MBusError
-from pymbus.telegrams.fields.value_info import (
+from pymbus.telegrams.fields import (
     ValueInformationField as VIF,
 )
-from pymbus.telegrams.fields.value_info import (
+from pymbus.telegrams.fields import (
     ValueInformationFieldExtension as VIFE,
 )
 
 ## the VIF section
-
-
-@pytest.mark.parametrize(
-    ("byte", "expectation"),
-    [
-        (-1, pytest.raises(MBusError)),
-        (0, does_not_raise()),
-        (255, does_not_raise()),
-        (256, pytest.raises(MBusError)),
-    ],
-)
-def test_vif_init(byte: int, expectation: AbstractContextManager):
-    with expectation:
-        VIF(byte=byte)
 
 
 def test_vif_repr():

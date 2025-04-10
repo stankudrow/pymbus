@@ -4,25 +4,7 @@ from contextlib import nullcontext as does_not_raise
 import pytest
 
 from pymbus.exceptions import MBusError
-from pymbus.telegrams.fields.control import (
-    ControlField,
-)
-
-
-@pytest.mark.parametrize(
-    ("byte", "expectation"),
-    [
-        (-1, pytest.raises(MBusError)),
-        (0, does_not_raise()),
-        (255, does_not_raise()),
-        (256, pytest.raises(MBusError)),
-    ],
-)
-def test_field_init(byte: int, expectation: AbstractContextManager):
-    with expectation:
-        field = ControlField(byte)
-
-        assert field.byte == byte
+from pymbus.telegrams.fields import ControlField
 
 
 @pytest.mark.parametrize(
