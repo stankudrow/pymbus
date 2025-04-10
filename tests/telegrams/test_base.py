@@ -7,39 +7,20 @@ from pymbus.exceptions import MBusError
 from pymbus.telegrams.base import (
     TelegramContainer,
     TelegramField,
-    parse_byte,
-    validate_byte,
 )
 
 
-def _get_byte_test_data() -> tuple[
-    tuple[str, str], list[tuple[int, AbstractContextManager]]
-]:
-    params = ("nbr", "expectation")
-    matrix = [
-        (-1, pytest.raises(MBusError)),
-        (0, does_not_raise()),
-        (128, does_not_raise()),
-        (255, does_not_raise()),
-        (256, pytest.raises(MBusError)),
-    ]
-    return (params, matrix)
-
-
-@pytest.mark.parametrize(*_get_byte_test_data())
-def test_byte_validator(nbr: int, expectation: AbstractContextManager):
-    with expectation:
-        validate_byte(nbr=nbr)
-
-
-@pytest.mark.parametrize(*_get_byte_test_data())
-def test_byte_parsing(nbr: int, expectation: AbstractContextManager):
-    with expectation:
-        assert parse_byte(nbr) == parse_byte(TelegramField(nbr))
-
-
 class TestTelegramField:
-    @pytest.mark.parametrize(*_get_byte_test_data())
+    @pytest.mark.parametrize(
+        ("nbr", "expectation"),
+        [
+            (-1, pytest.raises(MBusError)),
+            (0, does_not_raise()),
+            (128, does_not_raise()),
+            (255, does_not_raise()),
+            (256, pytest.raises(MBusError)),
+        ],
+    )
     def test_init(self, nbr: int, expectation: AbstractContextManager):
         with expectation:
             TelegramField(nbr)
@@ -56,7 +37,7 @@ class TestTelegramField:
         assert tf != TelegramField(non_nbr)
         assert tf != non_nbr
 
-    def test_byte_ro(self):
+    def test_byte_property(self):
         nbr = 128
         tf = TelegramField(nbr)
 
@@ -72,6 +53,36 @@ class TestTelegramContainer:
         tf2 = TelegramContainer.from_integers(ints)
 
         assert tf1 == tf2
+
+    @pytest.mark.parametrize(
+        ("container", "key", "answer"),
+        [
+            (TelegramContainer([21, 42]), 0, TelegramField(21)),
+            (TelegramContainer([21, 42]), 1, TelegramField(42)),
+            (
+                TelegramContainer([21, 42]),
+                slice(0, 2, 1),
+                TelegramContainer([21, 42]),
+            ),
+            (
+                TelegramContainer([21, 42]),
+                slice(0, 1, 1),
+                TelegramContainer([21]),
+            ),
+            (
+                TelegramContainer([21, 42]),
+                slice(1, 2, 1),
+                TelegramContainer([42]),
+            ),
+        ],
+    )
+    def test_getitem(
+        self,
+        container: TelegramContainer,
+        key: int | slice,
+        answer: TelegramField | TelegramContainer,
+    ):
+        assert container[key] == answer
 
     def test_as_bytes(self):
         tc = TelegramContainer.from_integers([0, 12, 23, 66])

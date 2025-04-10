@@ -6,4 +6,8 @@ class MBusError(Exception):
 
 
 class MBusLengthError(MBusError):
-    """Invalid length/size error."""
+    """Invalid Data Length/Size Error."""
+
+
+class MBusValidationError(MBusError):
+    """Data Validation Error."""

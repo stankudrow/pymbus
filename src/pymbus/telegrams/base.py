@@ -1,9 +1,19 @@
+"""Basic Telegram objects module.
+
+Glossary:
+
+- a byte is an integer witing the range(0, 256)
+- an instance of the TelegramField class is a wrapper over a byte
+- a telegram byte refers to the "int | TelegramField"
+"""
+
 from collections.abc import Iterable, Iterator
+from typing import cast
 
-from pymbus.exceptions import MBusError
+from pymbus.exceptions import MBusValidationError
 
 
-def validate_byte(nbr: int) -> int:
+def _validate_byte(nbr: int) -> int:
     """Validates an integer number to be a byte.
 
     In Python, a byte must be in range(0, 256).
@@ -21,7 +31,7 @@ def validate_byte(nbr: int) -> int:
     try:
         bytes([nbr])
     except ValueError as e:
-        raise MBusError from e
+        raise MBusValidationError from e
 
     return nbr
 
@@ -29,12 +39,12 @@ def validate_byte(nbr: int) -> int:
 class TelegramField:
     """The base "Field" class.
 
-    It is a base wrapper for a byte value.
+    It is a base wrapper over a byte value (validation is ensured).
     A Field is a part of blocks, frames and other Telegram containers.
     """
 
     def __init__(self, byte: int) -> None:
-        self._byte = validate_byte(byte)
+        self._byte = _validate_byte(byte)
 
     def __eq__(self, other: object) -> bool:
         sbyte = self.byte
@@ -56,22 +66,13 @@ class TelegramField:
 TelegramByteType = int | TelegramField
 
 
-def parse_byte(value: TelegramByteType) -> int:
-    """Return the byte value from the `byte_like` argument.
-
-    Parameters
-    ----------
-    value: TelegramByteType
-        either a byte-like integer or a TelegramField instance
-
-    Returns
-    -------
-    int
-    """
-
-    if isinstance(value, TelegramField):
-        return value.byte
-    return validate_byte(value)
+def _convert_to_telegram_fields(
+    ibytes: Iterable[TelegramByteType],
+) -> list[TelegramField]:
+    return [
+        ibyte if isinstance(ibyte, TelegramField) else TelegramField(ibyte)
+        for ibyte in ibytes
+    ]
 
 
 class TelegramContainer:
@@ -96,10 +97,7 @@ class TelegramContainer:
         return cls(barr)
 
     def __init__(self, ibytes: Iterable[TelegramByteType]) -> None:
-        self._fields: list[TelegramField] = [
-            ibyte if isinstance(ibyte, TelegramField) else TelegramField(ibyte)
-            for ibyte in ibytes
-        ]
+        self._fields = _convert_to_telegram_fields(ibytes)
 
     def __eq__(self, other: object) -> bool:
         sfields = self._fields
@@ -107,8 +105,13 @@ class TelegramContainer:
             other = other._fields
         return sfields == other
 
-    def __getitem__(self, idx: int) -> TelegramField:
-        return self._fields[idx]
+    def __getitem__(
+        self, key: int | slice
+    ) -> "TelegramField | TelegramContainer":
+        result = self._fields[key]
+        if isinstance(key, int):
+            return cast(TelegramField, result)
+        return type(self)(ibytes=cast("list[TelegramField]", result))
 
     def __iter__(self) -> Iterator[TelegramField]:
         yield from self._fields
@@ -118,7 +121,7 @@ class TelegramContainer:
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
-        return f"{cls_name}(fields={self._fields})"
+        return f"{cls_name}(ibytes={self._fields})"
 
     def __str__(self) -> str:
         return str(list(self))
