@@ -8,7 +8,6 @@ Glossary:
 """
 
 from collections.abc import Iterable, Iterator
-from typing import cast
 
 from pymbus.exceptions import MBusValidationError
 
@@ -86,18 +85,24 @@ class TelegramContainer:
     def from_hexstring(cls, hexstr: str) -> "TelegramContainer":
         """Return a class instance from a hexadecimal string."""
 
-        barr = bytearray.fromhex(hexstr)
-        return cls(barr)
+        try:
+            return cls(bytearray.fromhex(hexstr))
+        except ValueError as e:
+            raise MBusValidationError(str(e)) from e
 
     @classmethod
     def from_integers(cls, ints: Iterable[int]) -> "TelegramContainer":
         """Return a class instance from a sequence of integers."""
 
-        barr = bytearray(iter(ints))
-        return cls(barr)
+        try:
+            return cls(bytearray(iter(ints)))
+        except ValueError as e:
+            raise MBusValidationError(str(e)) from e
 
-    def __init__(self, ibytes: Iterable[TelegramByteType]) -> None:
-        self._fields = _convert_to_telegram_fields(ibytes)
+    def __init__(
+        self, ibytes: None | Iterable[TelegramByteType] = None
+    ) -> None:
+        self._fields = _convert_to_telegram_fields(ibytes or [])
 
     def __eq__(self, other: object) -> bool:
         sfields = self._fields
@@ -108,10 +113,9 @@ class TelegramContainer:
     def __getitem__(
         self, key: int | slice
     ) -> "TelegramField | TelegramContainer":
-        result = self._fields[key]
         if isinstance(key, int):
-            return cast(TelegramField, result)
-        return type(self)(ibytes=cast("list[TelegramField]", result))
+            return self._fields[key]
+        return type(self)(self._fields[key])
 
     def __iter__(self) -> Iterator[TelegramField]:
         yield from self._fields

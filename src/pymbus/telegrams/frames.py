@@ -9,19 +9,19 @@ The fields:
 
 """
 
-from collections.abc import Iterator
+from collections.abc import Iterable
 
-# from typing import Self
-from pymbus.exceptions import MBusError
+from pymbus.exceptions import MBusLengthError, MBusValidationError
 from pymbus.telegrams.base import (
-    TelegramBytesType,
+    TelegramByteType,
     TelegramContainer,
     TelegramField,
-    parse_byte,
 )
-from pymbus.telegrams.fields.address import AddressField
-from pymbus.telegrams.fields.control import ControlField
-from pymbus.telegrams.fields.control_info import ControlInformationField
+from pymbus.telegrams.fields import (
+    AddressField,
+    ControlField,
+    ControlInformationField,
+)
 
 ACK_BYTE = 0xE5
 
@@ -44,7 +44,7 @@ class SingleFrame(TelegramFrame):
     """
 
     @classmethod
-    def from_byte(cls, byte: int):
+    def from_byte(cls, byte: int) -> "SingleFrame":
         """Decode a Single (ACK) Frame from a byte integer.
 
         Parameters
@@ -62,29 +62,25 @@ class SingleFrame(TelegramFrame):
         Self
         """
 
-        cls.validate_ack_byte(byte=byte)
+        return SingleFrame([byte])
 
-        return SingleFrame()
+    def __init__(
+        self, ibytes: None | Iterable[TelegramByteType] = None
+    ) -> None:
+        if ibytes is None:
+            ibytes = [TelegramField(ACK_BYTE)]
 
-    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
-        if ibytes:
+        fields = list(TelegramContainer(ibytes=ibytes))
+        if len(fields) != 1:
             cls_name = type(self).__name__
-            if not len(ibytes) == 1:
-                msg = (
-                    f"only one byte is acceptable for a "
-                    f"{cls_name} instance, got {ibytes}"
-                )
-                raise MBusError(msg)
-            byte = ibytes[0]
-            SingleFrame.validate_ack_byte(byte=byte)
-        self._fields = [TelegramField(ACK_BYTE)]
+            msg = f"{cls_name} accepts only {ACK_BYTE}"
+            raise MBusLengthError(msg)
 
-    @classmethod
-    def validate_ack_byte(cls, byte: int) -> None:
-        cls_name = cls.__name__
-        if byte != ACK_BYTE:
-            msg = f"the {byte!r} cannot be {cls_name}"
-            raise MBusError(msg)
+        if (byte := fields[0].byte) != ACK_BYTE:
+            msg = f"{byte} != {ACK_BYTE}"
+            raise MBusValidationError(msg)
+
+        super().__init__(ibytes=fields)
 
 
 class ShortFrame(TelegramFrame):
@@ -106,40 +102,36 @@ class ShortFrame(TelegramFrame):
     5. stop 0x16.
     """
 
-    def __init__(self, ibytes: TelegramBytesType):
-        try:
-            self._parse_frame(iter(ibytes))
-        except StopIteration as e:
-            cls_name = type(self).__name__
-            msg = f"failed to parse {ibytes} as {cls_name}"
-            raise MBusError(msg) from e
+    def __init__(
+        self, ibytes: None | Iterable[TelegramByteType] = None
+    ) -> None:
+        fields, length = list(TelegramContainer(ibytes=ibytes)), 5
+        if len(fields) != length:
+            msg = f"the length is not equal to {length}"
+            raise MBusLengthError(msg)
 
-        self._fields: list[TelegramField] = [
-            self._start,
-            self._c,
-            self._a,
-            self._check_sum,
-            self._stop,
-        ]
-
-    def _parse_frame(self, it: Iterator[int | TelegramField]):
         cls_name = type(self).__name__
+        start_field = fields[0]
+        if (byte := start_field.byte) != SHORT_FRAME_START_BYTE:
+            msg = f"the first byte {byte!r} is an invalid {cls_name} start byte"
+            raise MBusValidationError(msg)
+        control_field = ControlField(fields[1].byte)
+        address_field = AddressField(fields[2].byte)
+        check_sum_field = TelegramField(fields[3].byte)
+        stop_field = fields[4]
+        if (byte := stop_field.byte) != FRAME_STOP_BYTE:
+            msg = f"the fifth byte {byte!r} is an invalid {cls_name} stop byte"
+            raise MBusValidationError(msg)
 
-        field = TelegramField(parse_byte(next(it)))
-        if (byte := field.byte) != SHORT_FRAME_START_BYTE:
-            msg = f"the first byte {byte!r} is invalid {cls_name} start byte"
-            raise MBusError(msg)
-        self._start = field
-
-        self._c = ControlField(parse_byte(next(it)))
-        self._a = AddressField(parse_byte(next(it)))
-        self._check_sum = TelegramField(parse_byte(next(it)))
-
-        field = TelegramField(parse_byte(next(it)))
-        if (byte := field.byte) != FRAME_STOP_BYTE:
-            msg = f"the fifth byte {byte!r} is invalid {cls_name} stop byte"
-            raise MBusError(msg)
-        self._stop = field
+        super().__init__(
+            [
+                start_field,
+                control_field,
+                address_field,
+                check_sum_field,
+                stop_field,
+            ]
+        )
 
 
 class ControlFrame(TelegramFrame):
@@ -162,54 +154,51 @@ class ControlFrame(TelegramFrame):
     9. stop 0x16.
     """
 
-    def __init__(self, ibytes: TelegramBytesType):
-        try:
-            self._parse_frame(iter(ibytes))
-        except StopIteration as e:
-            cls_name = self.__class__.__name__
-            msg = f"failed to parse {ibytes} as {cls_name}"
-            raise MBusError(msg) from e
+    def __init__(
+        self, ibytes: None | Iterable[TelegramByteType] = None
+    ) -> None:
+        fields, length = list(TelegramContainer(ibytes=ibytes)), 9
+        if len(fields) != length:
+            msg = f"the length is not equal to {length}"
+            raise MBusLengthError(msg)
 
-        self._fields: list[TelegramField] = [
-            self._start,
-            self._len1,
-            self._len2,
-            self._start2,
-            self._c,
-            self._a,
-            self._ci,
-            self._check_sum,
-            self._stop,
-        ]
-
-    def _parse_frame(self, it: Iterator[int | TelegramField]):
-        cls_name = self.__class__.__name__
-
-        field = TelegramField(parse_byte(next(it)))
-        if (byte := field.byte) != CONTROL_FRAME_START_BYTE:
+        cls_name = type(self).__name__
+        start_field = fields[0]
+        if (byte := start_field.byte) != CONTROL_FRAME_START_BYTE:
             msg = f"the first byte {byte!r} is invalid {cls_name} start byte"
-            raise MBusError(msg)
-        self._start = field
+            raise MBusValidationError(msg)
 
-        self._len1 = TelegramField(parse_byte(next(it)))
-        self._len2 = TelegramField(parse_byte(next(it)))
+        length1_field = TelegramField(fields[1].byte)
+        length2_field = TelegramField(fields[2].byte)
 
-        field = TelegramField(parse_byte(next(it)))
-        if (byte := field.byte) != CONTROL_FRAME_START_BYTE:
+        start2_field = fields[3]
+        if (byte := start2_field.byte) != CONTROL_FRAME_START_BYTE:
             msg = f"the fourth byte {byte!r} is invalid {cls_name} start byte"
-            raise MBusError(msg)
-        self._start2 = field
+            raise MBusValidationError(msg)
 
-        self._c = ControlField(parse_byte(next(it)))
-        self._a = AddressField(parse_byte(next(it)))
-        self._ci = ControlInformationField(parse_byte(next(it)))
-        self._check_sum = TelegramField(parse_byte(next(it)))
+        control_field = ControlField(fields[4].byte)
+        address_field = AddressField(fields[5].byte)
+        control_info_field = ControlInformationField(fields[6].byte)
+        check_sum_field = TelegramField(fields[7].byte)
 
-        field = TelegramField(parse_byte(next(it)))
-        if (byte := field.byte) != FRAME_STOP_BYTE:
+        stop_field = fields[8]
+        if (byte := stop_field.byte) != FRAME_STOP_BYTE:
             msg = f"the ninth byte {byte!r} is invalid {cls_name} stop byte"
-            raise MBusError(msg)
-        self._stop = field
+            raise MBusValidationError(msg)
+
+        super().__init__(
+            [
+                start_field,
+                length1_field,
+                length2_field,
+                start2_field,
+                control_field,
+                address_field,
+                control_info_field,
+                check_sum_field,
+                stop_field,
+            ]
+        )
 
 
 class LongFrame(TelegramFrame):
@@ -234,58 +223,62 @@ class LongFrame(TelegramFrame):
     5. C field;
     6. A field;
     7. CI field;
-    8. user data (0-252 byte)
+    8. user data (a value from the 0-252 segment) (!)
     9. check sum;
     10. stop 0x16.
     """
 
-    def __init__(self, ibytes: TelegramBytesType):
-        try:
-            self._parse_frame(iter(ibytes))
-        except StopIteration as e:
-            cls_name = self.__class__.__name__
-            msg = f"failed to parse {ibytes} as {cls_name}"
-            raise MBusError(msg) from e
+    def __init__(
+        self, ibytes: None | Iterable[TelegramByteType] = None
+    ) -> None:
+        fields, length = list(TelegramContainer(ibytes=ibytes)), 10
+        if len(fields) != length:
+            msg = f"the length is not equal to {length}"
+            raise MBusLengthError(msg)
 
-        self._fields: list[TelegramField] = [
-            self._start,
-            self._len1,
-            self._len2,
-            self._start2,
-            self._c,
-            self._a,
-            self._ci,
-            self._data,
-            self._check_sum,
-            self._stop,
-        ]
-
-    def _parse_frame(self, it: Iterator[int]):
-        cls_name = self.__class__.__name__
-
-        field = TelegramField(parse_byte(next(it)))
-        if (byte := field.byte) != CONTROL_FRAME_START_BYTE:
+        cls_name = type(self).__name__
+        start_field = fields[0]
+        if (byte := start_field.byte) != CONTROL_FRAME_START_BYTE:
             msg = f"the first byte {byte!r} is invalid {cls_name} start byte"
-            raise MBusError(msg)
-        self._start = field
+            raise MBusValidationError(msg)
 
-        self._len1 = TelegramField(parse_byte(next(it)))
-        self._len2 = TelegramField(parse_byte(next(it)))
+        length1_field = TelegramField(fields[1].byte)
+        length2_field = TelegramField(fields[2].byte)
 
-        field = TelegramField(parse_byte(next(it)))
-        if (byte := field.byte) != CONTROL_FRAME_START_BYTE:
+        start2_field = fields[3]
+        if (byte := start2_field.byte) != CONTROL_FRAME_START_BYTE:
             msg = f"the fourth byte {byte!r} is invalid {cls_name} start byte"
-            raise MBusError(msg)
-        self._start2 = field
+            raise MBusValidationError(msg)
 
-        self._c = ControlField(parse_byte(next(it)))
-        self._a = AddressField(parse_byte(next(it)))
-        self._ci = ControlInformationField(parse_byte(next(it)))
-        self._data = TelegramField(parse_byte(next(it)))
-        self._check_sum = TelegramField(parse_byte(next(it)))
+        control_field = ControlField(fields[4].byte)
+        address_field = AddressField(fields[5].byte)
+        control_info_field = ControlInformationField(fields[6].byte)
 
-        field = TelegramField(parse_byte(next(it)))
-        if (byte := field.byte) != FRAME_STOP_BYTE:
-            msg = f"the ninth byte {byte!r} is invalid {cls_name} stop byte"
-            raise MBusError(msg)
-        self._stop = field
+        if not (0 <= (user_byte := fields[7].byte) <= 252):
+            msg = (
+                f"the eighth byte {byte!r} is invalid {cls_name} user data byte"
+            )
+            raise MBusValidationError(msg)
+        user_data_field = TelegramField(user_byte)
+
+        check_sum_field = TelegramField(fields[8].byte)
+
+        stop_field = fields[9]
+        if (byte := stop_field.byte) != FRAME_STOP_BYTE:
+            msg = f"the tenth byte {byte!r} is invalid {cls_name} stop byte"
+            raise MBusValidationError(msg)
+
+        super().__init__(
+            [
+                start_field,
+                length1_field,
+                length2_field,
+                start2_field,
+                control_field,
+                address_field,
+                control_info_field,
+                user_data_field,
+                check_sum_field,
+                stop_field,
+            ]
+        )
