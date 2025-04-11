@@ -18,6 +18,7 @@ class TestDIB:
         [
             ([-1], pytest.raises(MBusValidationError)),
             ([256], pytest.raises(MBusValidationError)),
+            ([0b0111_0000], does_not_raise()),
             ([0b1000_1111, 0b0111_0000], does_not_raise()),
         ],
     )
@@ -87,12 +88,18 @@ class TestDIB:
         with expectation:
             DIB(ints)
 
-    def test_for_loop_over_dib(self):
+    def test_dib_iterability(self):
         it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
         dib = DIB(it)
 
         for df, byte in zip(dib, it, strict=True):
             assert df.byte == byte
+
+    def test_dib_fields_init_non_greedy_capture(self):
+        it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
+        dib = DIB(it)
+
+        assert list(dib) == it
 
 
 class TestVIB:
@@ -101,6 +108,7 @@ class TestVIB:
         [
             ([-1], pytest.raises(MBusValidationError)),
             ([256], pytest.raises(MBusValidationError)),
+            ([0b0111_0000], does_not_raise()),
             ([0b1000_1111, 0b0111_0000], does_not_raise()),
         ],
     )
@@ -170,9 +178,15 @@ class TestVIB:
         with expectation:
             VIB(ints)
 
-    def test_for_loop_over_vib(self):
+    def test_vib_iterability(self):
         it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
-        dib = VIB(it)
+        vib = VIB(it)
 
-        for df, byte in zip(dib, it, strict=True):
+        for df, byte in zip(vib, it, strict=True):
             assert df.byte == byte
+
+    def test_vib_fields_init_non_greedy_capture(self):
+        it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
+        vib = VIB(it)
+
+        assert list(vib) == it

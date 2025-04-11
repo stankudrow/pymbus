@@ -17,7 +17,7 @@ from pymbus.telegrams.codes.value_info import (
 from pymbus.telegrams.codes.value_info import (
     ValueInformationFieldCode as VIFC,
 )
-from pymbus.telegrams.fields.value_info import ValueInformationField as VIF
+from pymbus.telegrams.fields import ValueInformationField as VIF
 
 
 def _assert_vif_code(
