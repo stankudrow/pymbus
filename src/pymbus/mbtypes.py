@@ -45,7 +45,7 @@ from collections.abc import Iterable
 from datetime import date, datetime, time, timezone, tzinfo
 
 from pymbus.constants import BIG_ENDIAN, BYTE, NIBBLE
-from pymbus.exceptions import MBusError, MBusLengthError
+from pymbus.exceptions import MBusError, MBusLengthError, MBusValidationError
 
 BytesType = bytes | bytearray | Iterable[int]
 
@@ -54,7 +54,7 @@ BytesType = bytes | bytearray | Iterable[int]
 
 
 def _validate_non_empty_bytes(ibytes: BytesType) -> bytes:
-    ibytes = bytes(reversed(list(ibytes)))
+    ibytes = bytes(list(ibytes))
     if not ibytes:
         msg = "cannot parse empty bytes"
         raise MBusLengthError(msg)
@@ -108,6 +108,23 @@ def parse_int(ibytes: BytesType) -> int:
 
     The function is greedy.
 
+    Notes:
+    ------
+    An older implementation:
+    ```python
+    neg_sign = bytez[-1] & 0x80
+    value = 0
+    for byte in reversed(bytez):
+        value = value << BYTE
+        if neg_sign:
+            value += byte ^ 0xFF  # two's compliment
+        else:
+            value += byte
+    if neg_sign:
+        value = (-value) - 1  # two's compliment
+    return value
+    ```
+
     Parameters
     ----------
     ibytes: BytesType
@@ -125,22 +142,9 @@ def parse_int(ibytes: BytesType) -> int:
 
     bytez = _validate_non_empty_bytes(ibytes)
 
-    # the sequence is reversed, the last got the first
-    neg_sign = bytez[0] & 0x80
-    value = 0
-
-    for byte in bytez:
-        value = value << BYTE
-
-        if neg_sign:
-            value += byte ^ 0xFF  # two's compliment
-        else:
-            value += byte
-
-    if neg_sign:
-        value = (-value) - 1  # two's compliment
-
-    return value
+    return int.from_bytes(
+        bytes(reversed(bytez)), byteorder=BIG_ENDIAN, signed=True
+    )
 
 
 def parse_uint(ibytes: BytesType) -> int:
@@ -166,7 +170,9 @@ def parse_uint(ibytes: BytesType) -> int:
 
     bytez = _validate_non_empty_bytes(ibytes)
 
-    return int.from_bytes(bytez, byteorder=BIG_ENDIAN, signed=False)
+    return int.from_bytes(
+        bytes(reversed(bytez)), byteorder=BIG_ENDIAN, signed=False
+    )
 
 
 ## boolean section
