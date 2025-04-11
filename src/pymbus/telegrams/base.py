@@ -30,7 +30,8 @@ def _validate_byte(nbr: int) -> int:
     try:
         bytes([nbr])
     except ValueError as e:
-        raise MBusValidationError from e
+        msg = f"{nbr} is not a valid byte"
+        raise MBusValidationError(msg) from e
 
     return nbr
 
