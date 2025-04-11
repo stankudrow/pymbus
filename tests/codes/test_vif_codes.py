@@ -1,6 +1,6 @@
 import pytest
 
-from pymbus.telegrams.codes.value_info import (
+from pymbus.codes.value_info import (
     EnergyJouleVIFCode,
     EnergyWattHourVIFCode,
     MassKilogramVIFCode,
@@ -14,7 +14,7 @@ from pymbus.telegrams.codes.value_info import (
     VolumeMeterCubeVIFCode,
     get_vif_code,
 )
-from pymbus.telegrams.codes.value_info import (
+from pymbus.codes.value_info import (
     ValueInformationFieldCode as VIFC,
 )
 from pymbus.telegrams.fields import ValueInformationField as VIF
