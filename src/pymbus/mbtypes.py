@@ -739,8 +739,5 @@ class DateTime:
     def to_datetime(self) -> datetime:
         return self._datetime
 
-    def to_iso(self, *, with_tz: bool = False) -> str:
-        iso_format = self._datetime.isoformat()
-        if not with_tz:
-            iso_format, _, _ = iso_format.partition("+")
-        return iso_format
+    def to_iso(self) -> str:
+        return self._datetime.isoformat()
