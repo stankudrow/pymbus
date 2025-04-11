@@ -1,9 +1,8 @@
-from pymbus.exceptions import MBusError
+from collections.abc import Iterable
+
 from pymbus.telegrams.base import (
-    TelegramBytesType,
-)
-from pymbus.telegrams.base import (
-    TelegramContainer as TelegramRecord,
+    TelegramByteType,
+    TelegramContainer,
 )
 from pymbus.telegrams.blocks import (
     DataInformationBlock as DIB,
@@ -11,6 +10,10 @@ from pymbus.telegrams.blocks import (
 from pymbus.telegrams.blocks import (
     ValueInformationBlock as VIB,
 )
+
+
+class TelegramRecord(TelegramContainer):
+    """Base Telegram Record class"""
 
 
 class DataRecord(TelegramRecord):
@@ -27,15 +30,17 @@ class DataRecord(TelegramRecord):
     VIB = Value Information Block.
     """
 
-    def __init__(self, ibytes: TelegramBytesType):
-        try:
-            it = iter(ibytes)
-        except TypeError as e:
-            msg = f"{ibytes} is not iterable"
-            raise MBusError(msg) from e
+    def __init__(
+        self, ibytes: None | Iterable[TelegramByteType] = None
+    ) -> None:
+        container = list(TelegramContainer(ibytes=ibytes))
 
-        self._dib = DIB(it)
-        self._vib = VIB(it)
+        dib = DIB(ibytes=container)
+        vib = VIB(ibytes=container[len(dib) :])
+
+        super().__init__(ibytes=container)
+        self._dib = dib
+        self._vib = vib
 
     @property
     def dib(self) -> DIB:

@@ -4,6 +4,7 @@ from pymbus.exceptions import MBusLengthError
 from pymbus.telegrams.base import (
     TelegramByteType,
     TelegramContainer,
+    TelegramField,
 )
 from pymbus.telegrams.fields import DataInformationField as DIF
 from pymbus.telegrams.fields import DataInformationFieldExtension as DIFE
@@ -39,18 +40,21 @@ class DataInformationBlock(TelegramBlock):
     def __init__(
         self, ibytes: None | Iterable[TelegramByteType] = None
     ) -> None:
-        container = TelegramContainer(ibytes=ibytes)
+        container = list(TelegramContainer(ibytes=ibytes))
 
         blocks = self._parse_blocks(container)
+        dif = blocks[0]
+        difes = blocks[1]
 
-        super().__init__(ibytes=container)
-        self._dif = blocks[0]
-        self._difes = blocks[1]
+        super().__init__(ibytes=container[: (len(difes) + 1)])
+        self._dif = dif
+        self._difes = difes
 
-    def _parse_blocks(self, tc: TelegramContainer) -> tuple[DIF, list[DIFE]]:
+    def _parse_blocks(
+        self, fields: list[TelegramField]
+    ) -> tuple[DIF, list[DIFE]]:
         cls_name = type(self)
 
-        fields = list(tc)
         if len(fields) < 1:
             msg = f"no telegrams for {cls_name}"
             raise MBusLengthError(msg)
@@ -108,18 +112,21 @@ class ValueInformationBlock(TelegramBlock):
     def __init__(
         self, ibytes: None | Iterable[TelegramByteType] = None
     ) -> None:
-        container = TelegramContainer(ibytes=ibytes)
+        container = list(TelegramContainer(ibytes=ibytes))
 
         blocks = self._parse_blocks(container)
+        vif = blocks[0]
+        vifes = blocks[1]
 
-        super().__init__(ibytes=container)
-        self._vif = blocks[0]
-        self._vifes = blocks[1]
+        super().__init__(ibytes=container[: (len(vifes) + 1)])
+        self._vif = vif
+        self._vifes = vifes
 
-    def _parse_blocks(self, tc: TelegramContainer) -> tuple[VIF, list[VIFE]]:
+    def _parse_blocks(
+        self, fields: list[TelegramField]
+    ) -> tuple[VIF, list[VIFE]]:
         cls_name = type(self)
 
-        fields = list(tc)
         if len(fields) < 1:
             msg = f"no telegrams for {cls_name}"
             raise MBusLengthError(msg)
