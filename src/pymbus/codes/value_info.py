@@ -1,7 +1,7 @@
 from typing import Any
 
 from pymbus.exceptions import MBusError
-from pymbus.telegrams.fields.value_info import ValueInformationField as VIF
+from pymbus.telegrams.fields import ValueInformationField as VIF
 
 
 class ValueInformationFieldCode:
@@ -10,11 +10,7 @@ class ValueInformationFieldCode:
     DESC: None | str = None
     UNIT: Any = None
 
-    def __init__(self, vif: VIF):
-        if not isinstance(vif, VIF):
-            cls_name = self.__class__.__name__
-            msg = f"{vif} is not of VIF type for {cls_name}"
-            raise MBusError(msg)
+    def __init__(self, vif: VIF) -> None:
         self.check_coding(vif)
         self._vif = vif
         self._range = None
@@ -26,12 +22,12 @@ class ValueInformationFieldCode:
     def check_coding(self, vif: VIF) -> None:
         byte = vif.byte
         cmask = self.CMASK
-        emask = self.EMASK
-        code = byte & (~emask)
+        if emask := self.EMASK:
+            code = byte & (~emask)
 
-        if (code & 0x7F) != cmask:
-            msg = f"the {byte} does not fit to the code {cmask}"
-            raise MBusError(msg)
+            if (code & 0x7F) != cmask:
+                msg = f"the {byte} does not fit to the code {cmask}"
+                raise MBusError(msg)
 
 
 class EnergyWattHourVIFCode(ValueInformationFieldCode):
@@ -40,7 +36,7 @@ class EnergyWattHourVIFCode(ValueInformationFieldCode):
     DESC = "energy"
     UNIT = "Wh"
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         pwr = self._vif.byte & self.EMASK
@@ -53,7 +49,7 @@ class EnergyJouleVIFCode(ValueInformationFieldCode):
     DESC = "energy"
     UNIT = "J"
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         pwr = self._vif.byte & self.EMASK
@@ -66,7 +62,7 @@ class VolumeMeterCubeVIFCode(ValueInformationFieldCode):
     DESC = "volume"
     UNIT = "m^3"
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         pwr = self._vif.byte & self.EMASK
@@ -79,7 +75,7 @@ class MassKilogramVIFCode(ValueInformationFieldCode):
     DESC = "mass"
     UNIT = "kg"
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         pwr = self._vif.byte & self.EMASK
@@ -92,7 +88,7 @@ class OnTimeVIFCode(ValueInformationFieldCode):
     DESC = "on time"
     UNIT = None
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         unit = self._vif.byte & self.EMASK
@@ -116,7 +112,7 @@ class PowerWattVIFCode(ValueInformationFieldCode):
     DESC = "power"
     UNIT = "W"
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         pwr = self._vif.byte & self.EMASK
@@ -129,7 +125,7 @@ class PowerJoulePerHourVIFCode(ValueInformationFieldCode):
     DESC = "power"
     UNIT = "J/h"
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         pwr = self._vif.byte & self.EMASK
@@ -142,7 +138,7 @@ class VolumeFlowCubicMeterPerHourVIFCode(ValueInformationFieldCode):
     DESC = "volume flow"
     UNIT = "m^3/h"
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         pwr = self._vif.byte & self.EMASK
@@ -155,7 +151,7 @@ class VolumeFlowCubicMeterPerMinuteVIFCode(ValueInformationFieldCode):
     DESC = "volume flow"
     UNIT = "m^3/min"
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         pwr = self._vif.byte & self.EMASK
@@ -168,14 +164,14 @@ class VolumeFlowCubicMeterPerSecondVIFCode(ValueInformationFieldCode):
     DESC = "volume flow"
     UNIT = "m^3/s"
 
-    def __init__(self, vif: VIF):
+    def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
         pwr = self._vif.byte & self.EMASK
         self._range = 10 ** (pwr - 9)
 
 
-VIF_CODE_TYPES: list[ValueInformationFieldCode] = {
+VIF_CODE_TYPES: set[type[ValueInformationFieldCode]] = {
     EnergyWattHourVIFCode,
     EnergyJouleVIFCode,
     VolumeMeterCubeVIFCode,

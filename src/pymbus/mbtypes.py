@@ -1,4 +1,4 @@
-"""The Meter-Bus type classes and functions.
+"""The Meter-Bus (M-Bus) type classes and functions.
 
 Glossary:
 
@@ -42,16 +42,23 @@ Type G, or Compound CP16: Date -> 2 bytes.
 
 import struct
 from collections.abc import Iterable
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timezone, tzinfo
 
-# from typing import Self
 from pymbus.constants import BIG_ENDIAN, BYTE, NIBBLE
-from pymbus.exceptions import MBusError, MBusLengthError
+from pymbus.exceptions import MBusError, MBusLengthError, MBusValidationError
 
 BytesType = bytes | bytearray | Iterable[int]
 
 
 ## integer types section
+
+
+def _validate_non_empty_bytes(ibytes: BytesType) -> bytes:
+    ibytes = bytes(list(ibytes))
+    if not ibytes:
+        msg = "cannot parse empty bytes"
+        raise MBusLengthError(msg)
+    return ibytes
 
 
 def parse_bcd_uint(ibytes: BytesType) -> int:
@@ -78,16 +85,13 @@ def parse_bcd_uint(ibytes: BytesType) -> int:
     int
     """
 
-    _bytes = bytes(reversed(ibytes))
-    if not _bytes:
-        msg = "cannot parse empty bytes"
-        raise MBusLengthError(msg)
+    bytez = _validate_non_empty_bytes(ibytes)
 
     msp, lsp = 0b1111_0000, 0b0000_1111
     masks = (lsp, msp)
 
     number, power = 0, 0
-    for byte in _bytes:
+    for byte in bytez:
         for mask in masks:
             digit = byte & mask
             number += digit * 10**power
@@ -104,6 +108,23 @@ def parse_int(ibytes: BytesType) -> int:
 
     The function is greedy.
 
+    Notes:
+    ------
+    An older implementation:
+    ```python
+    neg_sign = bytez[-1] & 0x80
+    value = 0
+    for byte in reversed(bytez):
+        value = value << BYTE
+        if neg_sign:
+            value += byte ^ 0xFF  # two's compliment
+        else:
+            value += byte
+    if neg_sign:
+        value = (-value) - 1  # two's compliment
+    return value
+    ```
+
     Parameters
     ----------
     ibytes: BytesType
@@ -119,27 +140,11 @@ def parse_int(ibytes: BytesType) -> int:
     int
     """
 
-    _bytes = bytes(reversed(ibytes))
-    if not _bytes:
-        msg = "cannot parse empty bytes"
-        raise MBusLengthError(msg)
+    bytez = _validate_non_empty_bytes(ibytes)
 
-    # the sequence is reversed, the last got the first
-    neg_sign = _bytes[0] & 0x80
-    value = 0
-
-    for byte in _bytes:
-        value = value << BYTE
-
-        if neg_sign:
-            value += byte ^ 0xFF  # two's compliment
-        else:
-            value += byte
-
-    if neg_sign:
-        value = (-value) - 1  # two's compliment
-
-    return value
+    return int.from_bytes(
+        bytes(reversed(bytez)), byteorder=BIG_ENDIAN, signed=True
+    )
 
 
 def parse_uint(ibytes: BytesType) -> int:
@@ -163,12 +168,11 @@ def parse_uint(ibytes: BytesType) -> int:
     int
     """
 
-    _bytes = bytes(ibytes)
-    if not _bytes:
-        msg = "cannot parse empty bytes"
-        raise MBusLengthError(msg)
+    bytez = _validate_non_empty_bytes(ibytes)
 
-    return int.from_bytes(_bytes, byteorder=BIG_ENDIAN, signed=False)
+    return int.from_bytes(
+        bytes(reversed(bytez)), byteorder=BIG_ENDIAN, signed=False
+    )
 
 
 ## boolean section
@@ -230,7 +234,7 @@ def parse_float(ibytes: BytesType) -> float:
         raise MBusLengthError(str(ibytes)) from e
 
     try:
-        return struct.unpack("f", bytes(frame))[0]
+        return float(struct.unpack("f", bytes(frame))[0])
     except (struct.error, ValueError) as e:
         msg = f"float parsing error for {frame}: {e}"
         raise MBusError(msg) from e
@@ -243,19 +247,19 @@ class UnitType:
     """Type E = Compound CP16: types and units information."""
 
     @classmethod
-    def from_bytes(cls, frame: BytesType):
+    def from_bytes(cls, frame: BytesType) -> "UnitType":
         """Return a `UnitType` from an array of bytes."""
 
         return cls(frame)
 
     @classmethod
-    def from_hexstring(cls, hexstr: str):
+    def from_hexstring(cls, hexstr: str) -> "UnitType":
         """Return a `UnitType` from a hexadecimal string."""
 
         barr = bytearray.fromhex(hexstr)
         return cls.from_bytes(barr)
 
-    def __init__(self, ibytes: BytesType):
+    def __init__(self, ibytes: BytesType) -> None:
         it = iter(ibytes)
         try:
             lst = [next(it) for _ in range(2)]
@@ -274,12 +278,11 @@ class UnitType:
             ]
         )
 
-    def __eq__(self, other) -> bool:
-        return (
-            self.unit1 == other.unit1
-            and self.unit2 == other.unit2
-            and self.media == other.media
-        )
+    def __eq__(self, other: object) -> bool:
+        units = (self.unit1, self.unit2, self.media)
+        if isinstance(other, UnitType):
+            other = (other.unit1, other.unit2, other.media)
+        return units == other
 
     @property
     def media(self) -> bytes:
@@ -400,34 +403,32 @@ class Date:
     """Type G = Compound CP16: Date."""
 
     @classmethod
-    def from_date(cls, pydate: date):
+    def from_date(cls, pydate: date) -> "Date":
         """Return a `Date` from a Python date."""
 
         return cls(year=pydate.year, month=pydate.month, day=pydate.day)
 
     @classmethod
-    def from_bytes(cls, frame: BytesType):
+    def from_bytes(cls, frame: BytesType) -> "Date":
         """Return a `Date` from an array of bytes."""
 
         pydate = parse_date(frame)
         return cls.from_date(pydate)
 
     @classmethod
-    def from_hexstring(cls, hexstr: str):
+    def from_hexstring(cls, hexstr: str) -> "Date":
         """Return a `Date` from a hexadecimal string."""
 
         barr = bytearray.fromhex(hexstr)
         return cls.from_bytes(barr)
 
-    def __init__(self, year: int, month: int, day: int):
+    def __init__(self, year: int, month: int, day: int) -> None:
         self._date = date(year=year, month=month, day=day)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Date):
-            return self._date == other.date
-        if isinstance(other, date):
-            return self._date == other
-        return self._date == date(*other)
+            other = other.to_date()
+        return self._date == other
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
@@ -447,8 +448,7 @@ class Date:
     def day(self) -> int:
         return self._date.day
 
-    @property
-    def date(self) -> date:
+    def to_date(self) -> date:
         return self._date
 
     def to_iso_format(self) -> str:
@@ -531,7 +531,7 @@ class Time:
     _sep: str = ":"
 
     @classmethod
-    def from_time(cls, pytime: time):
+    def from_time(cls, pytime: time) -> "Time":
         return cls(
             hour=pytime.hour,
             minute=pytime.minute,
@@ -539,28 +539,26 @@ class Time:
         )
 
     @classmethod
-    def from_bytes(cls, frame: BytesType):
+    def from_bytes(cls, frame: BytesType) -> "Time":
         """Return a `Time` from an array of bytes."""
 
         pytime = parse_time(frame)
         return cls.from_time(pytime)
 
     @classmethod
-    def from_hexstring(cls, hexstr: str):
+    def from_hexstring(cls, hexstr: str) -> "Time":
         """Return a `Time` from a hexadecimal string."""
 
         barr = bytearray.fromhex(hexstr)
         return cls.from_bytes(barr)
 
-    def __init__(self, hour: int, minute: int, second: int = 0):
+    def __init__(self, hour: int, minute: int, second: int = 0) -> None:
         self._time = time(hour=hour, minute=minute, second=second)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Time):
-            return self._time == other.time
-        if isinstance(other, time):
-            return self._time == other
-        return self._time == time(*other)
+            other = other.to_time()
+        return self._time == other
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
@@ -582,20 +580,11 @@ class Time:
     def second(self) -> int:
         return self._time.second
 
-    @property
-    def time(self) -> time:
-        return self._time
-
     def to_iso_format(self, *, timespec: str = "auto") -> str:
         return self._time.isoformat(timespec=timespec)
 
-    def to_hhmm_format(self) -> str:
-        fmt = self._time.isoformat()
-        return self._sep.join(fmt.split(self._sep)[:2])
-
-    def to_hhmmss_format(self) -> str:
-        fmt = self._time.isoformat()
-        return self._sep.join(fmt.split(self._sep)[:3])
+    def to_time(self) -> time:
+        return self._time
 
 
 ### DateTime section
@@ -657,7 +646,7 @@ class DateTime:
     """Type F = Compound CP32: Date and Time."""
 
     @classmethod
-    def from_datetime(cls, pydatetime: datetime):
+    def from_datetime(cls, pydatetime: datetime) -> "DateTime":
         """Return a `DateTime` from a Python datetime."""
 
         return cls(
@@ -671,14 +660,14 @@ class DateTime:
         )
 
     @classmethod
-    def from_bytes(cls, frame: BytesType):
+    def from_bytes(cls, frame: BytesType) -> "DateTime":
         """Return a `DateTime` from an array of bytes."""
 
         pydatetime = parse_datetime(frame)
         return cls.from_datetime(pydatetime)
 
     @classmethod
-    def from_hexstring(cls, hexstr: str):
+    def from_hexstring(cls, hexstr: str) -> "DateTime":
         """Return a `DateTime` from a hexadecimal string."""
 
         barr = bytes.fromhex(hexstr)
@@ -692,8 +681,8 @@ class DateTime:
         hour: int,
         minute: int,
         second: int = 0,
-        tzinfo: timezone | None = timezone.utc,
-    ):
+        tzinfo: tzinfo | None = None,
+    ) -> None:
         self._datetime = datetime(
             year=year,
             month=month,
@@ -704,19 +693,19 @@ class DateTime:
             tzinfo=tzinfo,
         )
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
+        sdt = self._datetime
         if isinstance(other, DateTime):
-            return self._datetime == other.datetime
-        if isinstance(other, datetime):
-            return self._datetime == other
-        return self._datetime == datetime(*other)  # noqa: DTZ001
+            other = other.to_datetime()
+        return sdt == other  # noqa: DTZ001
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
         return (
             f"{cls_name}("
             f"year={self.year}, month={self.month}, day={self.day}, "
-            f"hour={self.hour}, minute={self.minute}, second={self.second})"
+            f"hour={self.hour}, minute={self.minute}, second={self.second}, "
+            f"tzinfo={self.tzinfo})"
         )
 
     @property
@@ -744,11 +733,11 @@ class DateTime:
         return self._datetime.second
 
     @property
-    def datetime(self) -> datetime:
+    def tzinfo(self) -> tzinfo | None:
+        return self._datetime.tzinfo
+
+    def to_datetime(self) -> datetime:
         return self._datetime
 
-    def to_iso(self, *, with_tz: bool = False) -> str:
-        iso_format = self._datetime.isoformat()
-        if not with_tz:
-            iso_format, _, _ = iso_format.partition("+")
-        return iso_format
+    def to_iso(self) -> str:
+        return self._datetime.isoformat()
