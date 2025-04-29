@@ -18,21 +18,19 @@ classifiers = [
 keywords = ["meter-bus", "m-bus"]
 dependencies = []
 
-[dependency-groups]
-lint = [
-    "ruff>=0.9.7",
-]
-test = [
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.15.0",
     "pytest>=8.3.4",
-    "pytest-asyncio>=0.25.3",
     "pytest-cov>=6.0.0",
-    "pytest-mock>=3.14.0",
     "pytest-random-order>=1.1.1",
     "pytest-xdist>=3.6.1",
+    "ruff>=0.9.7",
 ]
 
 [tool.coverage.run]
 branch = true
+omit = ["tests"]
 
 [tool.coverage.paths]
 source = ["src"]
@@ -48,56 +46,96 @@ show_missing = true
 skip_empty = true
 title = "Python Meter-Bus Coverage Report"
 
+[tool.mypy]
+files = [
+    "./src/**/*.py",
+    "./tests/**/*.py",
+]
+python_version = "3.10"
+check_untyped_defs = true
+disallow_untyped_defs = true
+pretty = true
+show_column_numbers = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "pytest"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
-minversion = "8.0"
+minversion = "8.3"
 addopts = [
-    "-s",
-    "-vvv",
-    "--cov=src",
     "--maxfail=1",
-    "--random-order",
+    "-s",
     "--strict-config",
     "--strict-markers",
+    "--cov",
+    "--cov-report=html",
+    "--random-order"
 ]
 xfail_strict = true
 testpaths = ["tests"]
+verbosity_test_cases = 3
 
 [tool.ruff]
-extend-exclude = [
-    "assets",
-]
+extend-exclude = ["assets"]
 line-length = 80
 respect-gitignore = true
 target-version = "py310"
 
+[tool.ruff.format]
+docstring-code-format = true
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+skip-magic-trailing-comma = false
+
 [tool.ruff.lint]
 select = [
     "A",  # flake8-builtins
+    "ANN",  # flake8-annotations
+    "ARG",  # flake8-unused-arguments
     "B",  # flake8-bugbear
     "BLE",  # flake8-blind-except
     "C4",  # flake8-comprehensions
     "DTZ",  # flake8-datetimez
-    "E",  # pycodestyle
     "EM",  # flake8-errmsg
-    "F",  # pyflakes
+    "ERA",  # eradicate
     "FBT",  # flake8-boolean-trap
     "I",  # isort
     "ICN",  # flake8-import-conventions
     "ISC",  # flake8-implicit-str-concat
-    "T20", # flake8-print
+    "PIE",  # flake8-pie
+    "PT",  # pytest-style
+    "PYI",  # flake8-pyi
+    "Q",  # flake8-quotes
+    "RSE",  # flake8-raise
+    "RET",  # flake8-return
+    "T",  # flake8-print-linter
+    "T20",  # flake8-print
+    "TC",  # flake8-type-checking
+    "TID",  # flake8-tidy-imports
+    "UP",  # pyupgrade
 ]
-fixable = [
-    "I",  # isort
-    "ICN",  # flake8-import-conventions
-    "ISC",  # flake8-implicit-str-concat
+ignore = [
+    "ANN401",  # https://docs.astral.sh/ruff/rules/any-type/
+    "ISC001",  # https://docs.astral.sh/ruff/rules/single-line-implicit-string-concatenation/
 ]
+fixable = ["I", "ICN", "ISC"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/**/*.py" = ["FBT001"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
+"tests/*.py" = [
+    "ANN201",  # https://docs.astral.sh/ruff/rules/missing-return-type-undocumented-public-function/
+    "FBT001",  # https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
+    "PT011"  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
+]

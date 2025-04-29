@@ -1,11 +1,9 @@
-from collections.abc import Iterable
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 
 import pytest
 
-from pymbus.exceptions import MBusError
-from pymbus.telegrams.base import TelegramField
+from pymbus.exceptions import MBusLengthError, MBusValidationError
 from pymbus.telegrams.frames import (
     ACK_BYTE,
     CONTROL_FRAME_START_BYTE,
@@ -21,235 +19,189 @@ from pymbus.telegrams.frames import (
 ## Single Character Frame section
 
 
-@pytest.mark.parametrize(
-    ("byte", "expectation"),
-    [
-        (ACK_BYTE, does_not_raise()),
-        (ACK_BYTE - 1, pytest.raises(MBusError)),
-    ],
-)
-def test_single_frame_init(byte: int, expectation: AbstractContextManager):
-    with expectation:
-        SingleFrame.from_byte(byte)
-    with expectation:
-        SingleFrame([byte])
+class TestSingleFrame:
+    @pytest.mark.parametrize(
+        ("it", "expectation"),
+        [
+            ([ACK_BYTE], does_not_raise()),
+            ([ACK_BYTE - 1], pytest.raises(MBusValidationError)),
+            ([], pytest.raises(MBusLengthError)),
+            ([ACK_BYTE, ACK_BYTE], pytest.raises(MBusLengthError)),
+        ],
+    )
+    def test_single_frame_init(
+        self, it: list[int], expectation: AbstractContextManager
+    ):
+        with expectation:
+            SingleFrame.from_integers(it)
 
-
-def test_single_frame_init_from_iterable():
-    ibytes = [ACK_BYTE]
-
-    SingleFrame(ibytes)
-
-    with pytest.raises(MBusError):
-        SingleFrame(ibytes + ibytes)
-
-
-def test_single_frame_container_interface():
-    frame = SingleFrame()
-
-    lst = list(frame)
-
-    assert len(lst) == len(frame)
-    assert lst[0] == frame[0]
-
-
-def test_single_frame_repr_str():
-    frame = SingleFrame()
-
-    repstr = repr(frame)
-    strstr = str(frame)
-    fields = frame.fields
-
-    assert repstr == f"SingleFrame(fields={fields})"
-    assert strstr == str(fields)
+        with expectation:
+            SingleFrame(it)
 
 
 ## Short Frame section
 
 
-@pytest.mark.parametrize(
-    ("data", "expectation"),
-    [
-        ([1], pytest.raises(MBusError)),
-        (
-            [
-                SHORT_FRAME_START_BYTE,
-                FRAME_STOP_BYTE,
-            ],
-            pytest.raises(MBusError),
-        ),
-        (
-            [SHORT_FRAME_START_BYTE, 2, 3, 4, FRAME_STOP_BYTE],
-            does_not_raise(),
-        ),
-    ],
-)
-def test_short_frame_init(data: Iterable, expectation: AbstractContextManager):
-    with expectation:
-        sh = ShortFrame(data)
+class TestShortFrame:
+    @pytest.mark.parametrize(
+        ("it", "expectation"),
+        [
+            ([], pytest.raises(MBusLengthError)),
+            (
+                [
+                    SHORT_FRAME_START_BYTE,
+                    FRAME_STOP_BYTE,
+                ],
+                pytest.raises(MBusLengthError),
+            ),
+            (
+                [SHORT_FRAME_START_BYTE, 2, 3, 4, FRAME_STOP_BYTE],
+                does_not_raise(),
+            ),
+            (
+                [
+                    SHORT_FRAME_START_BYTE,
+                    2,
+                    1234,  # failure
+                    4,
+                    FRAME_STOP_BYTE,
+                ],
+                pytest.raises(MBusValidationError),
+            ),
+        ],
+    )
+    def test_short_frame_init(
+        self, it: list[int], expectation: AbstractContextManager
+    ):
+        with expectation:
+            ShortFrame.from_integers(it)
 
-        frame = list(sh)
-
-        for pos in range(len(sh)):
-            assert frame[pos] is sh[pos]
-
-
-def test_short_frame_repr_str():
-    ibytes = [
-        SHORT_FRAME_START_BYTE,
-        TelegramField(1),
-        2,
-        0b0000_0011,
-        FRAME_STOP_BYTE,
-    ]
-    frame = ShortFrame(ibytes)
-
-    repstr = repr(frame)
-    strstr = str(frame)
-    fields = frame.fields
-
-    assert repstr == f"ShortFrame(fields={fields})"
-    assert strstr == str(fields)
+        with expectation:
+            ShortFrame(it)
 
 
 ## Control Frame section
 
 
-@pytest.mark.parametrize(
-    ("data", "expectation"),
-    [
-        ([1], pytest.raises(MBusError)),
-        (
-            [
-                CONTROL_FRAME_START_BYTE,
-                FRAME_STOP_BYTE,
-            ],
-            pytest.raises(MBusError),
-        ),
-        (
-            [
-                CONTROL_FRAME_START_BYTE,
-                1,
-                2,
-                CONTROL_FRAME_START_BYTE,
-                4,
-                5,
-                6,
-                7,
-                FRAME_STOP_BYTE,
-            ],
-            does_not_raise(),
-        ),
-    ],
-)
-def test_control_frame_init(
-    data: Iterable, expectation: AbstractContextManager
-):
-    with expectation:
-        ctrl = ControlFrame(data)
+class TestControlFrame:
+    @pytest.mark.parametrize(
+        ("it", "expectation"),
+        [
+            ([], pytest.raises(MBusLengthError)),
+            (
+                [
+                    CONTROL_FRAME_START_BYTE,
+                    FRAME_STOP_BYTE,
+                ],
+                pytest.raises(MBusLengthError),
+            ),
+            (
+                [
+                    CONTROL_FRAME_START_BYTE,
+                    1,
+                    2,
+                    CONTROL_FRAME_START_BYTE,
+                    4,
+                    5,
+                    6,
+                    7,
+                    FRAME_STOP_BYTE,
+                ],
+                does_not_raise(),
+            ),
+            (
+                [
+                    CONTROL_FRAME_START_BYTE,
+                    1,
+                    2,
+                    CONTROL_FRAME_START_BYTE,
+                    4,
+                    1234,  # failure
+                    6,
+                    7,
+                    FRAME_STOP_BYTE,
+                ],
+                pytest.raises(MBusValidationError),
+            ),
+        ],
+    )
+    def test_control_frame_init(
+        self, it: list[int], expectation: AbstractContextManager
+    ):
+        with expectation:
+            ControlFrame.from_integers(it)
 
-        frame = list(ctrl)
-
-        for pos in range(len(ctrl)):
-            assert frame[pos] is ctrl[pos]
-
-
-def test_control_frame_repr_str():
-    ibytes = [
-        CONTROL_FRAME_START_BYTE,
-        TelegramField(1),
-        2,
-        CONTROL_FRAME_START_BYTE,
-        TelegramField(0b0000_0011),
-        4,
-        5,
-        6,
-        FRAME_STOP_BYTE,
-    ]
-    frame = ControlFrame(ibytes)
-
-    repstr = repr(frame)
-    strstr = str(frame)
-    fields = frame.fields
-
-    assert repstr == f"ControlFrame(fields={fields})"
-    assert strstr == str(fields)
+        with expectation:
+            ControlFrame(it)
 
 
 ## Long Frame section
 
 
-@pytest.mark.parametrize(
-    ("data", "expectation"),
-    [
-        ([1], pytest.raises(MBusError)),
-        (
-            [
-                CONTROL_FRAME_START_BYTE,
-                FRAME_STOP_BYTE,
-            ],
-            pytest.raises(MBusError),
-        ),
-        (
-            [
-                LONG_FRAME_START_BYTE,
-                1,
-                2,
-                LONG_FRAME_START_BYTE,
-                4,
-                5,
-                6,
-                0,  # user data
-                7,
-                FRAME_STOP_BYTE,
-            ],
-            does_not_raise(),
-        ),
-        (
-            [
-                LONG_FRAME_START_BYTE,
-                1,
-                2,
-                LONG_FRAME_START_BYTE,
-                4,
-                5,
-                6,
-                252,  # user data
-                7,
-                FRAME_STOP_BYTE,
-            ],
-            does_not_raise(),
-        ),
-    ],
-)
-def test_long_frame_init(data: Iterable, expectation: AbstractContextManager):
-    with expectation:
-        long = LongFrame(data)
+class TestLongFrame:
+    @pytest.mark.parametrize(
+        ("it", "expectation"),
+        [
+            ([], pytest.raises(MBusLengthError)),
+            (
+                [
+                    CONTROL_FRAME_START_BYTE,
+                    FRAME_STOP_BYTE,
+                ],
+                pytest.raises(MBusLengthError),
+            ),
+            (
+                [
+                    LONG_FRAME_START_BYTE,
+                    1,
+                    2,
+                    LONG_FRAME_START_BYTE,
+                    4,
+                    5,
+                    6,
+                    0,  # user data
+                    7,
+                    FRAME_STOP_BYTE,
+                ],
+                does_not_raise(),
+            ),
+            (
+                [
+                    LONG_FRAME_START_BYTE,
+                    1,
+                    2,
+                    LONG_FRAME_START_BYTE,
+                    4,
+                    5,
+                    6,
+                    252,  # user data
+                    7,
+                    FRAME_STOP_BYTE,
+                ],
+                does_not_raise(),
+            ),
+            (
+                [
+                    LONG_FRAME_START_BYTE,
+                    1,
+                    2,
+                    LONG_FRAME_START_BYTE,
+                    4,
+                    5,
+                    6,
+                    253,  # user data - failure
+                    7,
+                    FRAME_STOP_BYTE,
+                ],
+                pytest.raises(MBusValidationError),
+            ),
+        ],
+    )
+    def test_long_frame_init(
+        self, it: list[int], expectation: AbstractContextManager
+    ):
+        with expectation:
+            LongFrame.from_integers(it)
 
-        frame = list(long)
-
-        for pos in range(len(long)):
-            assert frame[pos] is long[pos]
-
-
-def test_long_frame_repr_str():
-    ibytes = [
-        CONTROL_FRAME_START_BYTE,
-        TelegramField(1),
-        2,
-        CONTROL_FRAME_START_BYTE,
-        TelegramField(0b0000_0011),
-        4,
-        5,
-        42,
-        6,
-        FRAME_STOP_BYTE,
-    ]
-    frame = LongFrame(ibytes)
-
-    repstr = repr(frame)
-    strstr = str(frame)
-    fields = frame.fields
-
-    assert repstr == f"LongFrame(fields={fields})"
-    assert strstr == str(fields)
+        with expectation:
+            LongFrame(it)

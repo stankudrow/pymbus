@@ -33,14 +33,13 @@ from pymbus.mbtypes import (
     ],
 )
 def test_date_init(
-    year: int, month: int, day: None | int, expectation: AbstractContextManager
+    year: int, month: int, day: int, expectation: AbstractContextManager
 ):
     with expectation:
         date_ = Date(year=year, month=month, day=day)
 
         assert date_ == date_
         assert date_ == date(year=year, month=month, day=day)
-        assert date_ == (year, month, day)
 
         assert date_.year == year
         assert date_.month == month
@@ -121,7 +120,6 @@ def test_time_init(
 
         assert time_ == time_
         assert time_ == time(hour=hour, minute=minute, second=second)
-        assert time_ == (hour, minute, second)
 
         assert time_.hour == hour
         assert time_.minute == minute
@@ -169,23 +167,6 @@ def test_time_repr():
     time_ = Time(hour=hour, minute=minute, second=second)
 
     assert repr(time_) == f"Time(hour={hour}, minute={minute}, second={second})"
-
-
-def test_time_to_iso():
-    hour, minute, second = 23, 59, 59
-
-    time_ = Time(hour=hour, minute=minute, second=second)
-
-    assert time_.to_iso_format() == f"{hour}:{minute}:{second}"
-
-
-def test_time_to_strings():
-    hour, minute, second = 23, 59, 59
-
-    time_ = Time(hour=hour, minute=minute, second=second)
-
-    assert time_.to_iso_format() == time_.to_hhmmss_format()
-    assert time_.to_hhmm_format() == f"{hour}:{minute}"
 
 
 ### datetime section
@@ -269,7 +250,6 @@ def test_datetime_init(
             second=second,
             tzinfo=tzinfo,
         )
-        assert datetime_ == (year, month, day, hour, minute, second)
 
         assert datetime_.year == year
         assert datetime_.month == month
@@ -393,7 +373,8 @@ def test_datetime_repr():
     )
     repstr = (
         f"DateTime(year={year}, month={month}, day={day}, "
-        f"hour={hour}, minute={minute}, second={second})"
+        f"hour={hour}, minute={minute}, second={second}, "
+        f"tzinfo=None)"
     )
 
     assert repr(dt) == repstr
@@ -408,4 +389,3 @@ def test_datetime_to_iso():
     ans_base = f"{year}-{month}-{day}T{hour}:{minute}:{second}"
 
     assert dt.to_iso() == ans_base
-    assert dt.to_iso(with_tz=True) == f"{ans_base}+00:00"
