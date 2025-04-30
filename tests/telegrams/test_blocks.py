@@ -22,7 +22,7 @@ class TestDIB:
             ([0b1000_1111, 0b0111_0000], does_not_raise()),
         ],
     )
-    def test_dib_init_from_integers(
+    def test_init_from_integers(
         self, ints: list[int], expectation: AbstractContextManager
     ):
         with expectation:
@@ -35,7 +35,7 @@ class TestDIB:
             ("8f 70", does_not_raise()),
         ],
     )
-    def test_dib_init_from_hexstring(
+    def test_init_from_hexstring(
         self, hexstr: str, expectation: AbstractContextManager
     ):
         with expectation:
@@ -82,24 +82,30 @@ class TestDIB:
             ),
         ],
     )
-    def test_dib_init(
-        self, ints: list[int], expectation: AbstractContextManager
-    ):
+    def test_init(self, ints: list[int], expectation: AbstractContextManager):
         with expectation:
             DIB(ints)
 
-    def test_dib_iterability(self):
+    def test_iterability(self):
         it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
         dib = DIB(it)
 
         for df, byte in zip(dib, it, strict=True):
             assert df.byte == byte
 
-    def test_dib_fields_init_non_greedy_capture(self):
-        it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
-        dib = DIB(it)
+    @pytest.mark.parametrize(
+        ("it", "nbytes"),
+        [
+            ([0b1000_0000, 0b1000_0001, 0b0111_0010], 3),
+            ([0b1000_0000, 0b0000_0000, 0b1111_1111], 2),
+        ],
+    )
+    def test_non_greediness(self, it: list[int], nbytes: int):
+        gen = (el for el in it)
+        dib = DIB(gen)
 
-        assert list(dib) == it
+        assert list(dib) == it[:nbytes]
+        assert list(gen) == it[nbytes:]
 
 
 class TestVIB:
@@ -112,7 +118,7 @@ class TestVIB:
             ([0b1000_1111, 0b0111_0000], does_not_raise()),
         ],
     )
-    def test_vib_init_from_integers(
+    def test_init_from_integers(
         self, ints: list[int], expectation: AbstractContextManager
     ):
         with expectation:
@@ -125,7 +131,7 @@ class TestVIB:
             ("8f 70", does_not_raise()),
         ],
     )
-    def test_vib_init_from_hexstring(
+    def test_init_from_hexstring(
         self, hexstr: str, expectation: AbstractContextManager
     ):
         with expectation:
@@ -172,21 +178,27 @@ class TestVIB:
             ),
         ],
     )
-    def test_vib_init(
-        self, ints: list[int], expectation: AbstractContextManager
-    ):
+    def test_init(self, ints: list[int], expectation: AbstractContextManager):
         with expectation:
             VIB(ints)
 
-    def test_vib_iterability(self):
+    def test_iterability(self):
         it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
         vib = VIB(it)
 
         for df, byte in zip(vib, it, strict=True):
             assert df.byte == byte
 
-    def test_vib_fields_init_non_greedy_capture(self):
-        it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
-        vib = VIB(it)
+    @pytest.mark.parametrize(
+        ("it", "nbytes"),
+        [
+            ([0b1000_0000, 0b1000_0001, 0b0111_0010], 3),
+            ([0b1000_0000, 0b0000_0000, 0b1111_1111], 2),
+        ],
+    )
+    def test_non_greediness(self, it: list[int], nbytes: int):
+        gen = (el for el in it)
+        dib = DIB(gen)
 
-        assert list(vib) == it
+        assert list(dib) == it[:nbytes]
+        assert list(gen) == it[nbytes:]

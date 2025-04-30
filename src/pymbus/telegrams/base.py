@@ -12,28 +12,33 @@ from collections.abc import Iterable, Iterator
 from pymbus.exceptions import MBusValidationError
 
 
-def _validate_byte(nbr: int) -> int:
-    """Validates an integer number to be a byte.
+def _validate_byte(number: int) -> int:
+    """Returns an integer if it is a byte.
 
     In Python, a byte must be in range(0, 256).
     This is the range for an 8-bit unsigned integer.
 
+    Parameters
+    ----------
+    number : int
+
     Raises
     ------
-    MbusError: `nbr` is out of the [0, 255] segment.
+    MbusValidationError
+        the `number` is out of the [0, 255] segment.
 
     Returns
     -------
-    int - the validated byte
+    int
     """
 
     try:
-        bytes([nbr])
+        bytes([number])
     except ValueError as e:
-        msg = f"{nbr} is not a valid byte"
+        msg = f"{number} is not a valid byte"
         raise MBusValidationError(msg) from e
 
-    return nbr
+    return number
 
 
 class TelegramField:
@@ -51,6 +56,9 @@ class TelegramField:
         if isinstance(other, TelegramField):
             other = other.byte
         return sbyte == other
+
+    def __int__(self) -> int:
+        return self.byte
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
@@ -81,6 +89,8 @@ class TelegramContainer:
 
     A telegram container consists of telegram fields
     and it is an iterable object, which may also be an iterator.
+
+    The container accepts incoming bytes in a greedy manner.
     """
 
     @classmethod
@@ -127,5 +137,43 @@ class TelegramContainer:
         cls_name = type(self).__name__
         return f"{cls_name}(ibytes={self._fields})"
 
+    @staticmethod
+    def _iterify(data: None | TelegramBytesType = None) -> Iterator:
+        return iter(data or [])
+
     def as_bytes(self) -> bytes:
-        return bytes(field.byte for field in self._fields)
+        """Return bytes as Python `bytes`."""
+
+        return bytes(self.as_ints())
+
+    def as_ints(self) -> list[int]:
+        """Return bytes as a list of integers."""
+
+        return [field.byte for field in self._fields]
+
+
+def extract_bytes(it: Iterable) -> list[int]:
+    """Return the list of integers from an iterable object.
+
+    Notes
+    -----
+    The items are validated except `TelegramField`s.
+
+    Parameters
+    ----------
+    it : Iterable
+
+    Raises
+    ------
+    MbusValidationError:
+        if any item is not a byte.
+
+    Returns
+    -------
+    list[int]
+    """
+
+    return [
+        item.byte if isinstance(item, TelegramField) else _validate_byte(item)
+        for item in it
+    ]
