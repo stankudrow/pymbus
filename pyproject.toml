@@ -48,7 +48,7 @@ omit = ["tests"]
 source = ["src"]
 
 [tool.coverage.report]
-fail_under = 83
+fail_under = 90
 precision = 0
 skip_covered = true
 skip_empty = true
@@ -122,6 +122,7 @@ select = [
     "DTZ",  # flake8-datetimez
     "EM",  # flake8-errmsg
     "ERA",  # eradicate
+    "F",  # Pyflakes
     "FBT",  # flake8-boolean-trap
     "I",  # isort
     "ICN",  # flake8-import-conventions
@@ -132,7 +133,11 @@ select = [
     "Q",  # flake8-quotes
     "RSE",  # flake8-raise
     "RET",  # flake8-return
+    "S",  # flake8-bandit
+    "SLF",  # flake8-self
+    "SIM",  # flake8-simplify
     "T",  # flake8-print-linter
+    "T10",  # flake8-debugger
     "T20",  # flake8-print
     "TC",  # flake8-type-checking
     "TID",  # flake8-tidy-imports
@@ -149,5 +154,6 @@ fixable = ["I", "ICN", "ISC"]
 "tests/*.py" = [
     "ANN201",  # https://docs.astral.sh/ruff/rules/missing-return-type-undocumented-public-function/
     "FBT001",  # https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
-    "PT011"  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
+    "PT011",  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
+    "S",
 ]
