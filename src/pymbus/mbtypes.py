@@ -42,10 +42,11 @@ Type G, or Compound CP16: Date -> 2 bytes.
 
 import struct
 from collections.abc import Iterable
+from contextlib import suppress
 from datetime import date, datetime, time, timezone, tzinfo
 
-from pymbus.constants import BIG_ENDIAN, BYTE, NIBBLE
-from pymbus.exceptions import MBusError, MBusLengthError, MBusValidationError
+from pymbus.constants import BIG_ENDIAN, NIBBLE
+from pymbus.exceptions import MBusError, MBusLengthError
 
 BytesType = bytes | bytearray | Iterable[int]
 
@@ -615,10 +616,8 @@ def parse_datetime(ibytes: BytesType) -> datetime:
     except StopIteration as e:
         raise MBusLengthError(str(ibytes)) from e
 
-    try:
+    with suppress(StopIteration):
         lst += [next(it)]
-    except StopIteration:
-        pass
 
     fields = bytes(lst)
 

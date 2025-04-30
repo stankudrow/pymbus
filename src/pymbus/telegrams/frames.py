@@ -1,4 +1,4 @@
-"""Telegram frames of the M-Bus protocol.
+"""M-Bus Telegram Frames module.
 
 The fields:
 
@@ -9,11 +9,9 @@ The fields:
 
 """
 
-from collections.abc import Iterable
-
 from pymbus.exceptions import MBusLengthError, MBusValidationError
 from pymbus.telegrams.base import (
-    TelegramByteType,
+    TelegramBytesType,
     TelegramContainer,
     TelegramField,
 )
@@ -64,9 +62,7 @@ class SingleFrame(TelegramFrame):
 
         return SingleFrame([byte])
 
-    def __init__(
-        self, ibytes: None | Iterable[TelegramByteType] = None
-    ) -> None:
+    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
         if ibytes is None:
             ibytes = [TelegramField(ACK_BYTE)]
 
@@ -102,9 +98,7 @@ class ShortFrame(TelegramFrame):
     5. stop 0x16.
     """
 
-    def __init__(
-        self, ibytes: None | Iterable[TelegramByteType] = None
-    ) -> None:
+    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
         fields, length = list(TelegramContainer(ibytes=ibytes)), 5
         if len(fields) != length:
             msg = f"the length is not equal to {length}"
@@ -154,9 +148,7 @@ class ControlFrame(TelegramFrame):
     9. stop 0x16.
     """
 
-    def __init__(
-        self, ibytes: None | Iterable[TelegramByteType] = None
-    ) -> None:
+    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
         fields, length = list(TelegramContainer(ibytes=ibytes)), 9
         if len(fields) != length:
             msg = f"the length is not equal to {length}"
@@ -228,9 +220,7 @@ class LongFrame(TelegramFrame):
     10. stop 0x16.
     """
 
-    def __init__(
-        self, ibytes: None | Iterable[TelegramByteType] = None
-    ) -> None:
+    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
         fields, length = list(TelegramContainer(ibytes=ibytes)), 10
         if len(fields) != length:
             msg = f"the length is not equal to {length}"
