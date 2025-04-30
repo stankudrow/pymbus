@@ -1,10 +1,12 @@
 """M-Bus Telegram Blocks module."""
 
+from collections.abc import Iterator
+
 from pymbus.exceptions import MBusLengthError
 from pymbus.telegrams.base import (
-    TelegramBytesType,
+    TelegramByteIterableType,
     TelegramContainer,
-    TelegramField,
+    extract_bytes,
 )
 from pymbus.telegrams.fields import DataInformationField as DIF
 from pymbus.telegrams.fields import DataInformationFieldExtension as DIFE
@@ -16,7 +18,7 @@ ValueFieldType = VIF | VIFE
 
 
 class TelegramBlock(TelegramContainer):
-    """Base Telegram Block class"""
+    """Base Telegram Block class."""
 
 
 class DataInformationBlock(TelegramBlock):
@@ -37,40 +39,39 @@ class DataInformationBlock(TelegramBlock):
 
     MAX_DIFE_FRAMES = 10
 
-    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
-        container = list(TelegramContainer(ibytes=ibytes))
+    def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
+        it = self._iterify(ibytes)
 
-        blocks = self._parse_blocks(container)
+        try:
+            blocks = self._parse(it)
+        except StopIteration as e:
+            msg = f"{ibytes!r} is invalid"
+            raise MBusLengthError(msg) from e
         dif = blocks[0]
         difes = blocks[1]
 
-        super().__init__(ibytes=container[: (len(difes) + 1)])
+        super().__init__(ibytes=extract_bytes([dif] + difes))
         self._dif = dif
         self._difes = difes
 
-    def _parse_blocks(
-        self, fields: list[TelegramField]
-    ) -> tuple[DIF, list[DIFE]]:
-        cls_name = type(self)
-
-        if len(fields) < 1:
-            msg = f"no telegrams for {cls_name}"
-            raise MBusLengthError(msg)
-
-        dif = DIF(byte=fields[0].byte)
+    def _parse(self, it: Iterator) -> tuple[DIF, list[DIFE]]:
+        value: int = int(next(it))
+        dif = DIF(byte=value)
         if not dif.extension:
             return (dif, [])
 
         difes: list[DIFE] = []
         max_frame = self.MAX_DIFE_FRAMES + 1
-        pos = 1
-        while byte := fields[pos].byte:
-            dife = DIFE(byte=byte)
+        dife_counter = 1
+        while True:
+            value = int(next(it))
+            dife = DIFE(byte=value)
             difes.append(dife)
             if not dife.extension:
                 break
-            pos += 1
-            if pos == max_frame:
+
+            dife_counter += 1
+            if dife_counter == max_frame:
                 if dife.extension:
                     msg = f"the last {dife} has the extension bit set"
                     raise MBusLengthError(msg)
@@ -79,10 +80,14 @@ class DataInformationBlock(TelegramBlock):
 
     @property
     def dif(self) -> DIF:
+        """Return the DIF field."""
+
         return self._dif
 
     @property
     def difes(self) -> list[DIFE]:
+        """Return the list of DIFE fields."""
+
         return self._difes
 
 
@@ -107,40 +112,38 @@ class ValueInformationBlock(TelegramBlock):
 
     MAX_VIFE_FRAMES = 10
 
-    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
-        container = list(TelegramContainer(ibytes=ibytes))
+    def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
+        it = self._iterify(ibytes)
 
-        blocks = self._parse_blocks(container)
+        try:
+            blocks = self._parse(it)
+        except StopIteration as e:
+            msg = f"{ibytes!r} is invalid"
+            raise MBusLengthError(msg) from e
         vif = blocks[0]
         vifes = blocks[1]
 
-        super().__init__(ibytes=container[: (len(vifes) + 1)])
+        super().__init__(ibytes=extract_bytes([vif] + vifes))
         self._vif = vif
         self._vifes = vifes
 
-    def _parse_blocks(
-        self, fields: list[TelegramField]
-    ) -> tuple[VIF, list[VIFE]]:
-        cls_name = type(self)
-
-        if len(fields) < 1:
-            msg = f"no telegrams for {cls_name}"
-            raise MBusLengthError(msg)
-
-        vif = VIF(byte=fields[0].byte)
+    def _parse(self, it: Iterator) -> tuple[VIF, list[VIFE]]:
+        value: int = int(next(it))
+        vif = VIF(byte=value)
         if not vif.extension:
             return (vif, [])
 
         vifes: list[VIFE] = []
         max_frame = self.MAX_VIFE_FRAMES + 1
-        pos = 1
-        while byte := fields[pos].byte:
-            vife = VIFE(byte=byte)
+        vife_counter = 1
+        while True:
+            value = int(next(it))
+            vife = VIFE(byte=value)
             vifes.append(vife)
             if not vife.extension:
                 break
-            pos += 1
-            if pos == max_frame:
+            vife_counter += 1
+            if vife_counter == max_frame:
                 if vife.extension:
                     msg = f"the last {vife} has the extension bit set"
                     raise MBusLengthError(msg)
@@ -149,8 +152,12 @@ class ValueInformationBlock(TelegramBlock):
 
     @property
     def vif(self) -> VIF:
+        """Return the VIF field."""
+
         return self._vif
 
     @property
     def vifes(self) -> list[VIFE]:
+        """Return the list of VIFE fields."""
+
         return self._vifes
