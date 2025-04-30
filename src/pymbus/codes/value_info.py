@@ -11,7 +11,7 @@ class ValueInformationFieldCode:
     UNIT: Any = None
 
     def __init__(self, vif: VIF) -> None:
-        self.check_coding(vif)
+        self.validate_vif(vif)
         self._vif = vif
         self._range = None
 
@@ -19,7 +19,7 @@ class ValueInformationFieldCode:
     def multiplier(self) -> None | int | float:
         return self._range
 
-    def check_coding(self, vif: VIF) -> None:
+    def validate_vif(self, vif: VIF) -> None:
         byte = vif.byte
         cmask = self.CMASK
         if emask := self.EMASK:
@@ -190,6 +190,6 @@ def get_vif_code(vif: VIF) -> None | ValueInformationFieldCode:
     for code_type in VIF_CODE_TYPES:
         try:
             return code_type(vif)
-        except Exception:  # noqa: BLE001
+        except MBusError:
             pass
     return None

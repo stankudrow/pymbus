@@ -5,8 +5,10 @@ import pytest
 
 from pymbus.exceptions import MBusError
 from pymbus.telegrams.base import (
+    TelegramBytesType,
     TelegramContainer,
     TelegramField,
+    extract_bytes,
 )
 
 
@@ -42,6 +44,14 @@ class TestTelegramField:
         tf = TelegramField(nbr)
 
         assert tf.byte == nbr
+
+    def test_int_conversion(self):
+        nbr = 21
+
+        result = int(TelegramField(nbr))
+
+        assert isinstance(result, int)
+        assert result == nbr
 
 
 class TestTelegramContainer:
@@ -90,3 +100,20 @@ class TestTelegramContainer:
         bytez = bytes(tf.byte for tf in tc)
 
         assert tc.as_bytes() == bytez
+
+    def test_as_ints(self):
+        ints = [0, 1, 2]
+
+        tc = TelegramContainer(ints)
+
+        assert tc.as_ints() == ints
+
+
+@pytest.mark.parametrize(
+    ("it", "answer"),
+    [([], []), ([0, TelegramField(byte=42), 0b1111_1111], [0, 42, 255])],
+)
+def test_extract_bytes(it: TelegramBytesType, answer: list[int]) -> None:
+    bytez = extract_bytes(it)
+
+    assert bytez == answer
