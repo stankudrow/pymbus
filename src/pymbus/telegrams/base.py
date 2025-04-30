@@ -57,6 +57,12 @@ class TelegramField:
             other = other.byte
         return sbyte == other
 
+    def __lt__(self, other: "int | TelegramField") -> bool:
+        sbyte = self.byte
+        if isinstance(other, TelegramField):
+            other = other.byte
+        return sbyte < other
+
     def __int__(self) -> int:
         return self.byte
 
