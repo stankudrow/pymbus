@@ -1,4 +1,4 @@
-"""The (Telegram) Fields module."""
+"""M-Bus Telegram Fields module."""
 
 from enum import IntEnum
 

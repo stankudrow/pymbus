@@ -191,7 +191,7 @@ def test_ontime_vifcodes(vif: VIF, code_type: VIFC | None, unit: str):
         raise ValueError(msg)
 
     assert type(res) is code_type
-    assert res.UNIT == unit
+    assert unit == res.UNIT
 
 
 @pytest.mark.parametrize(

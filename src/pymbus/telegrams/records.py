@@ -1,7 +1,7 @@
-from collections.abc import Iterable
+"""M-Bus Telegram Data Record module."""
 
 from pymbus.telegrams.base import (
-    TelegramByteType,
+    TelegramBytesType,
     TelegramContainer,
 )
 from pymbus.telegrams.blocks import (
@@ -13,7 +13,7 @@ from pymbus.telegrams.blocks import (
 
 
 class TelegramRecord(TelegramContainer):
-    """Base Telegram Record class"""
+    """Base Telegram Record class."""
 
 
 class DataRecord(TelegramRecord):
@@ -21,7 +21,7 @@ class DataRecord(TelegramRecord):
 
     Typically encountered as Data Record Header (DRH).
 
-    The structure of the DR(H):
+    The structure of the DRH:
     -----------------
     |   DIB  |  VIB |
     -----------------
@@ -30,9 +30,7 @@ class DataRecord(TelegramRecord):
     VIB = Value Information Block.
     """
 
-    def __init__(
-        self, ibytes: None | Iterable[TelegramByteType] = None
-    ) -> None:
+    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
         container = list(TelegramContainer(ibytes=ibytes))
 
         dib = DIB(ibytes=container)

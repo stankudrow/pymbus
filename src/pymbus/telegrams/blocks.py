@@ -1,8 +1,8 @@
-from collections.abc import Iterable
+"""M-Bus Telegram Blocks module."""
 
 from pymbus.exceptions import MBusLengthError
 from pymbus.telegrams.base import (
-    TelegramByteType,
+    TelegramBytesType,
     TelegramContainer,
     TelegramField,
 )
@@ -37,9 +37,7 @@ class DataInformationBlock(TelegramBlock):
 
     MAX_DIFE_FRAMES = 10
 
-    def __init__(
-        self, ibytes: None | Iterable[TelegramByteType] = None
-    ) -> None:
+    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
         container = list(TelegramContainer(ibytes=ibytes))
 
         blocks = self._parse_blocks(container)
@@ -109,9 +107,7 @@ class ValueInformationBlock(TelegramBlock):
 
     MAX_VIFE_FRAMES = 10
 
-    def __init__(
-        self, ibytes: None | Iterable[TelegramByteType] = None
-    ) -> None:
+    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
         container = list(TelegramContainer(ibytes=ibytes))
 
         blocks = self._parse_blocks(container)
