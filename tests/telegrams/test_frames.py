@@ -29,9 +29,7 @@ class TestSingleFrame:
             ([ACK_BYTE, ACK_BYTE], pytest.raises(MBusLengthError)),
         ],
     )
-    def test_single_frame_init(
-        self, it: list[int], expectation: AbstractContextManager
-    ):
+    def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
             SingleFrame.from_integers(it)
 
@@ -70,14 +68,20 @@ class TestShortFrame:
             ),
         ],
     )
-    def test_short_frame_init(
-        self, it: list[int], expectation: AbstractContextManager
-    ):
+    def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
             ShortFrame.from_integers(it)
 
         with expectation:
             ShortFrame(it)
+
+    def test_non_greediness(self):
+        it = [SHORT_FRAME_START_BYTE, 2, 3, 4, FRAME_STOP_BYTE, 5]
+        gen = (b for b in it)
+
+        ShortFrame(gen)
+
+        assert list(gen) == [5]
 
 
 ## Control Frame section
@@ -125,14 +129,31 @@ class TestControlFrame:
             ),
         ],
     )
-    def test_control_frame_init(
-        self, it: list[int], expectation: AbstractContextManager
-    ):
+    def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
             ControlFrame.from_integers(it)
 
         with expectation:
             ControlFrame(it)
+
+    def test_non_greediness(self):
+        it = [
+            CONTROL_FRAME_START_BYTE,
+            1,
+            2,
+            CONTROL_FRAME_START_BYTE,
+            4,
+            5,
+            6,
+            7,
+            FRAME_STOP_BYTE,
+            21,
+        ]
+        gen = (b for b in it)
+
+        ControlFrame(gen)
+
+        assert list(gen) == [21]
 
 
 ## Long Frame section
@@ -197,11 +218,29 @@ class TestLongFrame:
             ),
         ],
     )
-    def test_long_frame_init(
-        self, it: list[int], expectation: AbstractContextManager
-    ):
+    def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
             LongFrame.from_integers(it)
 
         with expectation:
             LongFrame(it)
+
+    def test_non_greediness(self):
+        it = [
+            LONG_FRAME_START_BYTE,
+            1,
+            2,
+            LONG_FRAME_START_BYTE,
+            4,
+            5,
+            6,
+            252,  # user data
+            7,
+            FRAME_STOP_BYTE,
+            42,
+        ]
+        gen = (b for b in it)
+
+        LongFrame(gen)
+
+        assert list(gen) == [42]
