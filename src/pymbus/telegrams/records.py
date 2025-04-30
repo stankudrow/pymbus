@@ -43,3 +43,39 @@ class DataRecordHeader(TelegramContainer):
         """Return VI block."""
 
         return self._vib
+
+
+class DataRecord(TelegramContainer):
+    """The "Data Record" (DR) class.
+
+    The structure of the DR:
+    ----------------
+    |   DRH | data |
+    ----------------
+
+    DRH = Data Record Header.
+    data = data associated with the DRH.
+    """
+
+    def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
+        it = iter(ibytes)  # type: ignore [arg-type]
+
+        drh = DataRecordHeader(ibytes=it)
+        data = TelegramContainer(ibytes=it)
+
+        fields = list(drh) + list(data)
+        super().__init__(ibytes=fields)
+        self._drh = drh
+        self._data = data
+
+    @property
+    def drh(self) -> DataRecordHeader:
+        """Return DataRecordHeader."""
+
+        return self._drh
+
+    @property
+    def data(self) -> TelegramContainer:
+        """Return data fields."""
+
+        return self._data
