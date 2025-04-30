@@ -4,7 +4,7 @@ from collections.abc import Iterator
 
 from pymbus.exceptions import MBusLengthError
 from pymbus.telegrams.base import (
-    TelegramBytesType,
+    TelegramByteIterableType,
     TelegramContainer,
     extract_bytes,
 )
@@ -39,7 +39,7 @@ class DataInformationBlock(TelegramBlock):
 
     MAX_DIFE_FRAMES = 10
 
-    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
+    def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
         it = self._iterify(ibytes)
 
         try:
@@ -112,7 +112,7 @@ class ValueInformationBlock(TelegramBlock):
 
     MAX_VIFE_FRAMES = 10
 
-    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
+    def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
         it = self._iterify(ibytes)
 
         try:

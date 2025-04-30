@@ -73,10 +73,11 @@ class TelegramField:
 
 TelegramByteType = int | TelegramField
 TelegramBytesType = bytes | bytearray | Iterable[TelegramByteType]
+TelegramByteIterableType = TelegramBytesType | Iterator[TelegramByteType]
 
 
 def _convert_to_telegram_fields(
-    ibytes: TelegramBytesType,
+    ibytes: TelegramByteIterableType,
 ) -> list[TelegramField]:
     return [
         ibyte if isinstance(ibyte, TelegramField) else TelegramField(ibyte)
@@ -111,7 +112,7 @@ class TelegramContainer:
         except ValueError as e:
             raise MBusValidationError(str(e)) from e
 
-    def __init__(self, ibytes: None | TelegramBytesType = None) -> None:
+    def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
         self._fields = _convert_to_telegram_fields(ibytes or [])
 
     def __eq__(self, other: object) -> bool:
