@@ -87,7 +87,7 @@ class DataInformationBlock(TelegramBlock):
     @property
     def difes(self) -> list[DIFE]:
         """Return the list of DIFE fields."""
-  
+
         return self._difes
 
 

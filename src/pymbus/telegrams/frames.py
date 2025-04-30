@@ -8,7 +8,7 @@ The fields:
 - L = length
 """
 
-from collections.abc import Iterable
+from collections.abc import Iterator
 
 from pymbus.exceptions import MBusLengthError, MBusValidationError
 from pymbus.telegrams.base import (
