@@ -43,7 +43,7 @@ class DataInformationBlock(TelegramBlock):
         it = self._iterify(ibytes)
 
         try:
-            blocks = self._parse_blocks(it)
+            blocks = self._parse(it)
         except StopIteration as e:
             msg = f"{ibytes!r} is invalid"
             raise MBusLengthError(msg) from e
@@ -54,7 +54,7 @@ class DataInformationBlock(TelegramBlock):
         self._dif = dif
         self._difes = difes
 
-    def _parse_blocks(self, it: Iterator) -> tuple[DIF, list[DIFE]]:
+    def _parse(self, it: Iterator) -> tuple[DIF, list[DIFE]]:
         value: int = int(next(it))
         dif = DIF(byte=value)
         if not dif.extension:
@@ -116,7 +116,7 @@ class ValueInformationBlock(TelegramBlock):
         it = self._iterify(ibytes)
 
         try:
-            blocks = self._parse_blocks(it)
+            blocks = self._parse(it)
         except StopIteration as e:
             msg = f"{ibytes!r} is invalid"
             raise MBusLengthError(msg) from e
@@ -127,7 +127,7 @@ class ValueInformationBlock(TelegramBlock):
         self._vif = vif
         self._vifes = vifes
 
-    def _parse_blocks(self, it: Iterator) -> tuple[VIF, list[VIFE]]:
+    def _parse(self, it: Iterator) -> tuple[VIF, list[VIFE]]:
         value: int = int(next(it))
         vif = VIF(byte=value)
         if not vif.extension:
