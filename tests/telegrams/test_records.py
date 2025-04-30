@@ -10,6 +10,7 @@ from pymbus.telegrams.blocks import (
 from pymbus.telegrams.blocks import (
     ValueInformationBlock as VIB,
 )
+from pymbus.telegrams.records import DataRecord as DR
 from pymbus.telegrams.records import DataRecordHeader as DRH
 
 
@@ -23,6 +24,7 @@ class TestDataRecordHeader:
                 VIB(ibytes=[0b0111_0000]),
                 does_not_raise(),
             ),
+            ([], [], [], pytest.raises(MBusError)),
             ([-1], None, None, pytest.raises(MBusError)),
         ],
     )
@@ -59,3 +61,31 @@ class TestDataRecordHeader:
         assert dr.as_bytes() == data[:nfields]
         assert blocks == answer
         assert list(gen) == list(map(int, data[nfields:]))
+
+
+class TestDataRecord:
+    @pytest.mark.parametrize(
+        ("it", "drh", "data", "expectation"),
+        [
+            (
+                [0b0111_0000, 0b0111_0000, 21, 42],
+                DRH(ibytes=[0b0111_0000, 0b0111_0000]),
+                [21, 42],
+                does_not_raise(),
+            ),
+            ([], [], [], pytest.raises(MBusError)),
+            ([-1], None, None, pytest.raises(MBusError)),
+        ],
+    )
+    def test_init(
+        self,
+        it: list[int],
+        drh: None | DRH,
+        data: None | list[int],
+        expectation: AbstractContextManager,
+    ):
+        with expectation:
+            dr = DR(it)
+
+            assert dr.drh == drh
+            assert dr.data.as_ints() == data
