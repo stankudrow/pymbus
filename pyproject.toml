@@ -15,8 +15,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
-    "License :: OSI Approved :: MIT License",
-    "License :: Public Domain",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
@@ -25,7 +23,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "Programming Language :: Python :: Implementation :: CPython"
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy"
 ]
 keywords = ["meter-bus", "m-bus", "meters"]
 dependencies = []
@@ -39,6 +38,12 @@ dev = [
     "pytest-xdist>=3.6.1",
     "ruff>=0.9.7",
 ]
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
 
 [tool.coverage.run]
 branch = true
@@ -119,7 +124,10 @@ select = [
     "B",  # flake8-bugbear
     "BLE",  # flake8-blind-except
     "C4",  # flake8-comprehensions
+    "C90",  # mccabe
+    # "D",  # pydocstyle
     "DTZ",  # flake8-datetimez
+    "E",  # pycodestyle (Error)
     "EM",  # flake8-errmsg
     "ERA",  # eradicate
     "F",  # Pyflakes
@@ -127,6 +135,7 @@ select = [
     "I",  # isort
     "ICN",  # flake8-import-conventions
     "ISC",  # flake8-implicit-str-concat
+    "N",  # pep8-naming (N)
     "PIE",  # flake8-pie
     "PT",  # pytest-style
     "PYI",  # flake8-pyi
@@ -136,12 +145,16 @@ select = [
     "S",  # flake8-bandit
     "SLF",  # flake8-self
     "SIM",  # flake8-simplify
+    "SLOT",  # flake8-slots
     "T",  # flake8-print-linter
     "T10",  # flake8-debugger
     "T20",  # flake8-print
     "TC",  # flake8-type-checking
     "TID",  # flake8-tidy-imports
+    "TRY",  # tryceratops
     "UP",  # pyupgrade
+    "W",  # pycodestyle (Warning)
+    "YTT",  # flake8-2020
 ]
 ignore = [
     "ANN401",  # https://docs.astral.sh/ruff/rules/any-type/
@@ -150,9 +163,12 @@ ignore = [
 fixable = ["I", "ICN", "ISC"]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
+"{src,tests}/*.py" = [
+    "N817",  # https://docs.astral.sh/ruff/rules/camelcase-imported-as-acronym/
+]
 "tests/*.py" = [
     "ANN201",  # https://docs.astral.sh/ruff/rules/missing-return-type-undocumented-public-function/
+    "D",
     "FBT001",  # https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
     "PT011",  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
     "S",
