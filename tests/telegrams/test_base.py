@@ -1,51 +1,49 @@
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
+from operator import and_, or_, xor
 
 import pytest
 
-from pymbus.exceptions import MBusError
+from pymbus.exceptions import MBusValidationError
 from pymbus.telegrams.base import (
-    TelegramBytesType,
     TelegramContainer,
     TelegramField,
-    extract_bytes,
 )
 
 
 class TestTelegramField:
     @pytest.mark.parametrize(
-        ("nbr", "expectation"),
+        ("nbr", "validate", "expectation"),
         [
-            (-1, pytest.raises(MBusError)),
-            (0, does_not_raise()),
-            (128, does_not_raise()),
-            (255, does_not_raise()),
-            (256, pytest.raises(MBusError)),
+            (-1, True, pytest.raises(MBusValidationError)),
+            (-1, False, does_not_raise()),
+            (0, False, does_not_raise()),
+            (0, True, does_not_raise()),
+            (128, True, does_not_raise()),
+            (255, False, does_not_raise()),
+            (255, True, does_not_raise()),
+            (256, True, pytest.raises(MBusValidationError)),
+            (256, False, does_not_raise()),
         ],
     )
-    def test_init(self, nbr: int, expectation: AbstractContextManager):
+    def test_init(
+        self, nbr: int, validate: bool, expectation: AbstractContextManager
+    ):
         with expectation:
-            TelegramField(nbr)
+            TelegramField(nbr, validate=validate)
 
-    def test_equality(self):
-        nbr = 5
-        tf = TelegramField(nbr)
+    def test_comparison_ops(self):
+        nbr = 21
+        tf = TelegramField(nbr + 1)
 
-        assert tf == TelegramField(nbr)
-        assert tf == nbr
-        assert tf != "5"
+        assert TelegramField(nbr) == nbr
+        assert tf != nbr
+        assert tf > nbr
+        assert tf >= nbr
+        assert nbr < tf
+        assert nbr <= tf
 
-        non_nbr = nbr + 1
-        assert tf != TelegramField(non_nbr)
-        assert tf != non_nbr
-
-    def test_byte_property(self):
-        nbr = 128
-        tf = TelegramField(nbr)
-
-        assert tf.byte == nbr
-
-    def test_int_conversion(self):
+    def test_to_int(self):
         nbr = 21
 
         result = int(TelegramField(nbr))
@@ -53,16 +51,34 @@ class TestTelegramField:
         assert isinstance(result, int)
         assert result == nbr
 
+    def test_bitwise_ops(self):
+        nbr = 42
+        tf = TelegramField(nbr)
+
+        for op in (and_, or_, xor):
+            assert op(tf, 21) == op(nbr, 21)
+
+        assert ~tf == ~nbr
+
 
 class TestTelegramContainer:
-    def test_init_from(self):
-        hexstr = "00 FF"
-        ints = [0, 255]
-
-        tf1 = TelegramContainer.from_hexstring(hexstr)
-        tf2 = TelegramContainer.from_integers(ints)
-
-        assert tf1 == tf2
+    @pytest.mark.parametrize(
+        ("hexstr", "answer", "expectation"),
+        [
+            ("", [], does_not_raise()),
+            ("00 80 FF", [0, 128, 255], does_not_raise()),
+            ("XY", None, pytest.raises(MBusValidationError)),
+        ],
+    )
+    def test_from_hexstring(
+        self,
+        hexstr: str,
+        answer: None | list[int],
+        expectation: AbstractContextManager,
+    ):
+        with expectation:
+            tc = TelegramContainer.from_hexstring(hexstr)
+            assert tc == answer
 
     @pytest.mark.parametrize(
         ("container", "key", "answer"),
@@ -94,26 +110,10 @@ class TestTelegramContainer:
     ):
         assert container[key] == answer
 
-    def test_as_bytes(self):
-        tc = TelegramContainer.from_integers([0, 12, 23, 66])
-
-        bytez = bytes(tf.byte for tf in tc)
-
-        assert tc.as_bytes() == bytez
-
-    def test_as_ints(self):
-        ints = [0, 1, 2]
-
-        tc = TelegramContainer(ints)
-
-        assert tc.as_ints() == ints
-
-
-@pytest.mark.parametrize(
-    ("it", "answer"),
-    [([], []), ([0, TelegramField(byte=42), 0b1111_1111], [0, 42, 255])],
-)
-def test_extract_bytes(it: TelegramBytesType, answer: list[int]) -> None:
-    bytez = extract_bytes(it)
-
-    assert bytez == answer
+    def test_comparison_ops(self):
+        assert TelegramContainer([2, 1]) == [2, 1]
+        assert TelegramContainer([2, 1]) != [1, 2]
+        assert TelegramContainer([1, 2]) < [2, 1]
+        assert TelegramContainer([1, 2]) <= [2, 1]
+        assert TelegramContainer([2, 1]) > [1]
+        assert TelegramContainer([2, 1]) >= [1]
