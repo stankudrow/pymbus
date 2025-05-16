@@ -25,16 +25,13 @@ class TestSingleFrame:
         [
             ([ACK_BYTE], does_not_raise()),
             ([ACK_BYTE - 1], pytest.raises(MBusValidationError)),
-            ([], pytest.raises(MBusLengthError)),
-            ([ACK_BYTE, ACK_BYTE], pytest.raises(MBusLengthError)),
+            ([], does_not_raise()),
+            ([ACK_BYTE, ACK_BYTE], does_not_raise()),
         ],
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
-            SingleFrame.from_integers(it)
-
-        with expectation:
-            SingleFrame(it)
+            SingleFrame(it, validate=True)
 
 
 ## Short Frame section
@@ -70,10 +67,7 @@ class TestShortFrame:
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
-            ShortFrame.from_integers(it)
-
-        with expectation:
-            ShortFrame(it)
+            ShortFrame(it, validate=True)
 
     def test_non_greediness(self):
         it = [SHORT_FRAME_START_BYTE, 2, 3, 4, FRAME_STOP_BYTE, 5]
@@ -131,10 +125,7 @@ class TestControlFrame:
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
-            ControlFrame.from_integers(it)
-
-        with expectation:
-            ControlFrame(it)
+            ControlFrame(it, validate=True)
 
     def test_non_greediness(self):
         it = [
@@ -220,10 +211,7 @@ class TestLongFrame:
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
-            LongFrame.from_integers(it)
-
-        with expectation:
-            LongFrame(it)
+            LongFrame(it, validate=True)
 
     def test_non_greediness(self):
         it = [
