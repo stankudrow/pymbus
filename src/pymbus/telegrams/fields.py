@@ -357,8 +357,8 @@ class ValueInformationFieldExtension(TelegramField):
     UNIT_AND_MULTIPLIER_MASK = 0x7F  # 0b0111_1111
     EXTENSION_BIT_MASK = 0x80  # 0b1000_0000
 
-    def __init__(self, byte: int) -> None:
-        super().__init__(byte)
+    def __init__(self, byte: int, *, validate: bool = False) -> None:
+        super().__init__(byte, validate=validate)
 
         self._data = byte & self.UNIT_AND_MULTIPLIER_MASK
         self._ext = int((byte & self.EXTENSION_BIT_MASK) != 0)

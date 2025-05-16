@@ -14,21 +14,6 @@ from pymbus.telegrams.blocks import (
 
 class TestDIB:
     @pytest.mark.parametrize(
-        ("ints", "expectation"),
-        [
-            ([-1], pytest.raises(MBusValidationError)),
-            ([256], pytest.raises(MBusValidationError)),
-            ([0b0111_0000], does_not_raise()),
-            ([0b1000_1111, 0b0111_0000], does_not_raise()),
-        ],
-    )
-    def test_init_from_integers(
-        self, ints: list[int], expectation: AbstractContextManager
-    ):
-        with expectation:
-            DIB.from_integers(ints)
-
-    @pytest.mark.parametrize(
         ("hexstr", "expectation"),
         [
             ("123", pytest.raises(MBusValidationError)),
@@ -84,14 +69,14 @@ class TestDIB:
     )
     def test_init(self, ints: list[int], expectation: AbstractContextManager):
         with expectation:
-            DIB(ints)
+            DIB(ints, validate=True)
 
     def test_iterability(self):
         it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
         dib = DIB(it)
 
         for df, byte in zip(dib, it, strict=True):
-            assert df.byte == byte
+            assert int(df) == byte
 
     @pytest.mark.parametrize(
         ("it", "nbytes"),
@@ -109,21 +94,6 @@ class TestDIB:
 
 
 class TestVIB:
-    @pytest.mark.parametrize(
-        ("ints", "expectation"),
-        [
-            ([-1], pytest.raises(MBusValidationError)),
-            ([256], pytest.raises(MBusValidationError)),
-            ([0b0111_0000], does_not_raise()),
-            ([0b1000_1111, 0b0111_0000], does_not_raise()),
-        ],
-    )
-    def test_init_from_integers(
-        self, ints: list[int], expectation: AbstractContextManager
-    ):
-        with expectation:
-            VIB.from_integers(ints)
-
     @pytest.mark.parametrize(
         ("hexstr", "expectation"),
         [
@@ -180,14 +150,14 @@ class TestVIB:
     )
     def test_init(self, ints: list[int], expectation: AbstractContextManager):
         with expectation:
-            VIB(ints)
+            VIB(ints, validate=True)
 
     def test_iterability(self):
         it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
         vib = VIB(it)
 
         for df, byte in zip(vib, it, strict=True):
-            assert df.byte == byte
+            assert int(df) == byte
 
     @pytest.mark.parametrize(
         ("it", "nbytes"),
