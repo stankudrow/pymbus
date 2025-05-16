@@ -20,7 +20,7 @@ class ValueInformationFieldCode:
         return self._range
 
     def validate_vif(self, vif: VIF) -> None:
-        byte = vif.byte
+        byte = vif
         cmask = self.CMASK
         if emask := self.EMASK:
             code = byte & (~emask)
@@ -39,7 +39,7 @@ class EnergyWattHourVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        pwr = self._vif.byte & self.EMASK
+        pwr = self._vif & self.EMASK
         self._range = 10 ** (pwr - 3)
 
 
@@ -52,7 +52,7 @@ class EnergyJouleVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        pwr = self._vif.byte & self.EMASK
+        pwr = self._vif & self.EMASK
         self._range = 10**pwr
 
 
@@ -65,7 +65,7 @@ class VolumeMeterCubeVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        pwr = self._vif.byte & self.EMASK
+        pwr = self._vif & self.EMASK
         self._range = 10 ** (pwr - 6)
 
 
@@ -78,7 +78,7 @@ class MassKilogramVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        pwr = self._vif.byte & self.EMASK
+        pwr = self._vif & self.EMASK
         self._range = 10 ** (pwr - 3)
 
 
@@ -91,7 +91,7 @@ class OnTimeVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        unit = self._vif.byte & self.EMASK
+        unit = self._vif & self.EMASK
         if unit == 3:
             self.UNIT = "day"
         if unit == 2:
@@ -115,7 +115,7 @@ class PowerWattVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        pwr = self._vif.byte & self.EMASK
+        pwr = self._vif & self.EMASK
         self._range = 10 ** (pwr - 3)
 
 
@@ -128,7 +128,7 @@ class PowerJoulePerHourVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        pwr = self._vif.byte & self.EMASK
+        pwr = self._vif & self.EMASK
         self._range = 10 ** (pwr)
 
 
@@ -141,7 +141,7 @@ class VolumeFlowCubicMeterPerHourVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        pwr = self._vif.byte & self.EMASK
+        pwr = self._vif & self.EMASK
         self._range = 10 ** (pwr - 6)
 
 
@@ -154,7 +154,7 @@ class VolumeFlowCubicMeterPerMinuteVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        pwr = self._vif.byte & self.EMASK
+        pwr = self._vif & self.EMASK
         self._range = 10 ** (pwr - 7)
 
 
@@ -167,7 +167,7 @@ class VolumeFlowCubicMeterPerSecondVIFCode(ValueInformationFieldCode):
     def __init__(self, vif: VIF) -> None:
         super().__init__(vif)
 
-        pwr = self._vif.byte & self.EMASK
+        pwr = self._vif & self.EMASK
         self._range = 10 ** (pwr - 9)
 
 

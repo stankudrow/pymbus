@@ -8,73 +8,61 @@ Glossary:
 """
 
 from collections.abc import Iterable, Iterator
+from functools import total_ordering
 
 from pymbus.exceptions import MBusValidationError
+from pymbus.utils import validate_byte
 
 
-def _validate_byte(number: int) -> int:
-    """Returns an integer if it is a byte.
-
-    In Python, a byte must be in range(0, 256).
-    This is the range for an 8-bit unsigned integer.
-
-    Parameters
-    ----------
-    number : int
-
-    Raises
-    ------
-    MbusValidationError
-        the `number` is out of the [0, 255] segment.
-
-    Returns
-    -------
-    int
-    """
-
-    try:
-        bytes([number])
-    except ValueError as e:
-        msg = f"{number} is not a valid byte"
-        raise MBusValidationError(msg) from e
-
-    return number
-
-
+@total_ordering
 class TelegramField:
     """The base "Field" class.
 
-    It is a base wrapper over a byte value (validation is ensured).
-    A Field is a part of blocks, frames and other Telegram containers.
+    It is a base wrapper over a byte value.
     """
 
-    def __init__(self, byte: int) -> None:
-        self._byte = _validate_byte(byte)
+    def __init__(self, byte: int, *, validate: bool = False) -> None:
+        self._byte = validate_byte(byte) if validate else byte
+
+    def __and__(self, other: "int | TelegramField") -> int:
+        if isinstance(other, TelegramField):
+            other = other._byte
+        return self._byte & other
+
+    def __bool__(self) -> bool:
+        return bool(self._byte)
 
     def __eq__(self, other: object) -> bool:
-        sbyte = self.byte
+        sbyte = self._byte
         if isinstance(other, TelegramField):
-            other = other.byte
+            other = other._byte
         return sbyte == other
 
+    def __int__(self) -> int:
+        return self._byte
+
+    def __invert__(self) -> int:
+        return ~self._byte
+
     def __lt__(self, other: "int | TelegramField") -> bool:
-        sbyte = self.byte
+        sbyte = self._byte
         if isinstance(other, TelegramField):
-            other = other.byte
+            other = other._byte
         return sbyte < other
 
-    def __int__(self) -> int:
-        return self.byte
+    def __or__(self, other: "int | TelegramField") -> int:
+        if isinstance(other, TelegramField):
+            other = other._byte
+        return self._byte | other
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
-        return f"{cls_name}(byte={self.byte})"
+        return f"{cls_name}(byte={self._byte})"
 
-    @property
-    def byte(self) -> int:
-        """Return the byte value of the field."""
-
-        return self._byte
+    def __xor__(self, other: "int | TelegramField") -> int:
+        if isinstance(other, TelegramField):
+            other = other._byte
+        return self._byte ^ other
 
 
 TelegramByteType = int | TelegramField
@@ -82,22 +70,12 @@ TelegramBytesType = bytes | bytearray | Iterable[TelegramByteType]
 TelegramByteIterableType = TelegramBytesType | Iterator[TelegramByteType]
 
 
-def _convert_to_telegram_fields(
-    ibytes: TelegramByteIterableType,
-) -> list[TelegramField]:
-    return [
-        ibyte if isinstance(ibyte, TelegramField) else TelegramField(ibyte)
-        for ibyte in ibytes
-    ]
-
-
+@total_ordering
 class TelegramContainer:
     """The base class for Telegram containers.
 
-    A telegram container consists of telegram fields
-    and it is an iterable object, which may also be an iterator.
-
-    The container accepts incoming bytes in a greedy manner.
+    TelegramContainer consists of telegram fields.
+    When being instantiated, the incomin bytes are consumed greedily.
     """
 
     @classmethod
@@ -109,17 +87,17 @@ class TelegramContainer:
         except ValueError as e:
             raise MBusValidationError(str(e)) from e
 
-    @classmethod
-    def from_integers(cls, ints: Iterable[int]) -> "TelegramContainer":
-        """Return a class instance from a sequence of integers."""
-
-        try:
-            return cls(bytearray(iter(ints)))
-        except ValueError as e:
-            raise MBusValidationError(str(e)) from e
-
-    def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        self._fields = _convert_to_telegram_fields(ibytes or [])
+    def __init__(
+        self,
+        ibytes: None | TelegramByteIterableType = None,
+        *,
+        validate: bool = False,
+    ) -> None:
+        self._fields: list[TelegramField] = (
+            [TelegramField(int(ibyte), validate=validate) for ibyte in ibytes]
+            if ibytes
+            else []
+        )
 
     def __eq__(self, other: object) -> bool:
         sfields = self._fields
@@ -140,47 +118,12 @@ class TelegramContainer:
     def __len__(self) -> int:
         return len(self._fields)
 
+    def __lt__(self, other: Iterable) -> bool:
+        sfields = self._fields
+        if isinstance(other, TelegramContainer):
+            other = other._fields
+        return bool(sfields < list(other))
+
     def __repr__(self) -> str:
         cls_name = type(self).__name__
         return f"{cls_name}(ibytes={self._fields})"
-
-    @staticmethod
-    def _iterify(data: None | TelegramBytesType = None) -> Iterator:
-        return iter(data or [])
-
-    def as_bytes(self) -> bytes:
-        """Return bytes as Python `bytes`."""
-
-        return bytes(self.as_ints())
-
-    def as_ints(self) -> list[int]:
-        """Return bytes as a list of integers."""
-
-        return [field.byte for field in self._fields]
-
-
-def extract_bytes(it: Iterable) -> list[int]:
-    """Return the list of integers from an iterable object.
-
-    Notes
-    -----
-    The items are validated except `TelegramField`s.
-
-    Parameters
-    ----------
-    it : Iterable
-
-    Raises
-    ------
-    MbusValidationError:
-        if any item is not a byte.
-
-    Returns
-    -------
-    list[int]
-    """
-
-    return [
-        item.byte if isinstance(item, TelegramField) else _validate_byte(item)
-        for item in it
-    ]

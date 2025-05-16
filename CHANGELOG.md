@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## v0.4.0
+
+- improve Telegram classes ([PR-11](https://github.com/stankudrow/pymbus/pull/11)):
+  - the API of TelegramField is enriched:
+    - `total_ordering` is enabled - the full set of arithmetic comparison operators are on
+    - bitwise operator support:
+      - and (&)
+      - or (|)
+      - xor (^)
+      - inversion (~)
+    - the `validate` flag is added
+    - the `byte` attribute is removed
+  - the API of TelegramContainer is enriched:
+    - `total_ordering` is enabled
+    - the `validate` flag is added
+  - all entities related to the the TelegramField and TelegramContainer classes are updated
+  - introduce the `utils` module with the `validate_byte` function
+  - some obsolete entities are removed
+
 ## v0.3.0
 
 [PR-8](https://github.com/stankudrow/pymbus/pull/8)

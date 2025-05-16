@@ -1,4 +1,4 @@
-"""M-Bus Telegram Blocks module."""
+"""M-Bus Telegram Blocks."""
 
 from collections.abc import Iterator
 
@@ -6,7 +6,6 @@ from pymbus.exceptions import MBusLengthError
 from pymbus.telegrams.base import (
     TelegramByteIterableType,
     TelegramContainer,
-    extract_bytes,
 )
 from pymbus.telegrams.fields import DataInformationField as DIF
 from pymbus.telegrams.fields import DataInformationFieldExtension as DIFE
@@ -39,24 +38,32 @@ class DataInformationBlock(TelegramBlock):
 
     MAX_DIFE_FRAMES = 10
 
-    def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        it = self._iterify(ibytes)
+    def __init__(
+        self,
+        ibytes: None | TelegramByteIterableType = None,
+        *,
+        validate: bool = False,
+    ) -> None:
+        it = iter(ibytes if ibytes else [])
 
         try:
-            blocks = self._parse(it)
+            blocks = self._parse(it, validate=validate)
         except StopIteration as e:
-            msg = f"{ibytes!r} is invalid"
+            msg = f"{ibytes!r} has invalid length"
             raise MBusLengthError(msg) from e
-        dif = blocks[0]
-        difes = blocks[1]
 
-        super().__init__(ibytes=extract_bytes([dif] + difes))
+        dif: DIF = blocks[0]
+        difes: list[DIFE] = blocks[1]
+
+        super().__init__(ibytes=list(map(int, [dif] + difes)))  # type: ignore
         self._dif = dif
         self._difes = difes
 
-    def _parse(self, it: Iterator) -> tuple[DIF, list[DIFE]]:
+    def _parse(
+        self, it: Iterator, *, validate: bool = False
+    ) -> tuple[DIF, list[DIFE]]:
         value: int = int(next(it))
-        dif = DIF(byte=value)
+        dif = DIF(byte=value, validate=validate)
         if not dif.extension:
             return (dif, [])
 
@@ -65,7 +72,7 @@ class DataInformationBlock(TelegramBlock):
         dife_counter = 1
         while True:
             value = int(next(it))
-            dife = DIFE(byte=value)
+            dife = DIFE(byte=value, validate=validate)
             difes.append(dife)
             if not dife.extension:
                 break
@@ -112,24 +119,31 @@ class ValueInformationBlock(TelegramBlock):
 
     MAX_VIFE_FRAMES = 10
 
-    def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        it = self._iterify(ibytes)
+    def __init__(
+        self,
+        ibytes: None | TelegramByteIterableType = None,
+        *,
+        validate: bool = False,
+    ) -> None:
+        it = iter(ibytes if ibytes else [])
 
         try:
-            blocks = self._parse(it)
+            blocks = self._parse(it, validate=validate)
         except StopIteration as e:
-            msg = f"{ibytes!r} is invalid"
+            msg = f"{ibytes!r} has invalid length"
             raise MBusLengthError(msg) from e
         vif = blocks[0]
         vifes = blocks[1]
 
-        super().__init__(ibytes=extract_bytes([vif] + vifes))
+        super().__init__(ibytes=map(int, [vif] + vifes))  # type: ignore
         self._vif = vif
         self._vifes = vifes
 
-    def _parse(self, it: Iterator) -> tuple[VIF, list[VIFE]]:
+    def _parse(
+        self, it: Iterator, *, validate: bool = False
+    ) -> tuple[VIF, list[VIFE]]:
         value: int = int(next(it))
-        vif = VIF(byte=value)
+        vif = VIF(byte=value, validate=validate)
         if not vif.extension:
             return (vif, [])
 
@@ -138,10 +152,11 @@ class ValueInformationBlock(TelegramBlock):
         vife_counter = 1
         while True:
             value = int(next(it))
-            vife = VIFE(byte=value)
+            vife = VIFE(byte=value, validate=validate)
             vifes.append(vife)
             if not vife.extension:
                 break
+
             vife_counter += 1
             if vife_counter == max_frame:
                 if vife.extension:
