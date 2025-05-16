@@ -44,27 +44,27 @@ class AddressField(TelegramField):
     def is_configured_slave(self) -> bool:
         return (
             AF_SLAVE_MIN_RANGE_VALUE_BYTE
-            <= self.byte
+            <= self._byte
             <= AF_SLAVE_MAX_RANGE_VALUE_BYTE
         )
 
     def is_unconfigured_slave(self) -> bool:
-        return self.byte == AF_UNCONFIGURED_SLAVE_BYTE
+        return self._byte == AF_UNCONFIGURED_SLAVE_BYTE
 
     def is_slave(self) -> bool:
         return self.is_configured_slave() or self.is_unconfigured_slave()
 
     def is_broadcast_all_reply(self) -> bool:
-        return self.byte == AF_BROADCAST_ALL_SLAVES_REPLY_BYTE
+        return self._byte == AF_BROADCAST_ALL_SLAVES_REPLY_BYTE
 
     def is_broadcast_no_replies(self) -> bool:
-        return self.byte == AF_BROADCAST_NO_SLAVE_REPLIES_BYTE
+        return self._byte == AF_BROADCAST_NO_SLAVE_REPLIES_BYTE
 
     def is_broadcast(self) -> bool:
         return self.is_broadcast_all_reply() or self.is_broadcast_no_replies()
 
     def is_network_layer(self) -> bool:
-        return self.byte == AF_NETWORK_LAYER_BYTE
+        return self._byte == AF_NETWORK_LAYER_BYTE
 
 
 CF_FUNCTION_CODE_MASK = 0x0F
@@ -125,8 +125,8 @@ class ControlField(TelegramField):
     code the true function or action of the message.
     """
 
-    def __init__(self, byte: int) -> None:
-        super().__init__(byte)
+    def __init__(self, byte: int, *, validate: bool = False) -> None:
+        super().__init__(byte, validate=validate)
 
         self._code = byte & CF_FUNCTION_CODE_MASK
         self._fcv_or_dfc = int((byte & CF_FCV_OR_DFC_MASK) != 0)
@@ -221,8 +221,8 @@ class DataInformationField(TelegramField):
     STORAGE_NUMBER_LSB_MASK = 0x40  # 0b0100_0000
     EXTENSION_BIT_MASK = 0x80  # 0b1000_0000
 
-    def __init__(self, byte: int) -> None:
-        super().__init__(byte)
+    def __init__(self, byte: int, *, validate: bool = False) -> None:
+        super().__init__(byte, validate=validate)
 
         self._data = byte & self.DATA_FIELD_MASK
         self._func = (byte & self.FUNCTION_FIELD_MASK) >> 4
@@ -289,8 +289,8 @@ class DataInformationFieldExtension(TelegramField):
     DEVICE_UNIT_MASK = 0x40  # 0b0100_0000
     EXTENSION_BIT_MASK = 0x80  # 0b1000_0000
 
-    def __init__(self, byte: int) -> None:
-        super().__init__(byte)
+    def __init__(self, byte: int, *, validate: bool = False) -> None:
+        super().__init__(byte, validate=validate)
 
         self._storage_number = byte & self.STORAGE_NUMBER_MASK
         self._tariff = (byte & self.TARIFF_MASK) >> 4
@@ -328,8 +328,8 @@ class ValueInformationField(TelegramField):
     UNIT_AND_MULTIPLIER_MASK = 0x7F  # 0b0111_1111
     EXTENSION_BIT_MASK = 0x80  # 0b1000_0000
 
-    def __init__(self, byte: int) -> None:
-        super().__init__(byte)
+    def __init__(self, byte: int, *, validate: bool = False) -> None:
+        super().__init__(byte, validate=validate)
 
         self._data = byte & self.UNIT_AND_MULTIPLIER_MASK
         self._ext = int((byte & self.EXTENSION_BIT_MASK) != 0)

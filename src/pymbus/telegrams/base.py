@@ -11,7 +11,7 @@ from collections.abc import Iterable, Iterator
 from functools import total_ordering
 
 from pymbus.exceptions import MBusValidationError
-from pymbus.validators import validate_byte
+from pymbus.utils import validate_byte
 
 
 @total_ordering

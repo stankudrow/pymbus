@@ -1,8 +1,10 @@
+"""Pymbus utilities."""
+
 from pymbus.exceptions import MBusValidationError
 
 
 def validate_byte(number: int) -> int:
-    """Returns an integer if it is a byte.
+    """Return an integer if it is a byte.
 
     In Python, a byte must be in range(0, 256).
     This is the range for an 8-bit unsigned integer.
