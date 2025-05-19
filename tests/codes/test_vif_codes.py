@@ -1,3 +1,5 @@
+from typing import cast
+
 import pytest
 
 from pymbus.codes.value_info import (
@@ -8,28 +10,32 @@ from pymbus.codes.value_info import (
     OperatingTimeVIFCode,
     PowerJoulePerHourVIFCode,
     PowerWattVIFCode,
-    VolumeFlowCubicMeterPerHourVIFCode,
-    VolumeFlowCubicMeterPerMinuteVIFCode,
-    VolumeFlowCubicMeterPerSecondVIFCode,
-    VolumeMeterCubeVIFCode,
+    TimePointVIFCode,
+    VolumeMeterCubicPerHourVIFCode,
+    VolumeMeterCubicPerMinuteVIFCode,
+    VolumeMeterCubicPerSecondVIFCode,
+    VolumeMeterCubicVIFCode,
     get_vif_code,
 )
 from pymbus.codes.value_info import (
     ValueInformationFieldCode as VIFC,
 )
+from pymbus.mbtypes import Date, DateTime
 from pymbus.telegrams.fields import ValueInformationField as VIF
 
 
 def _assert_vif_code(
-    vif: VIF, code_type: VIFC | None, multiplier: float
+    vif: VIF, code_type: VIFC | None, multiplier: None | float = None
 ) -> None:
-    res = get_vif_code(vif)
-    if res is None:
+    code = get_vif_code(vif)
+    if code is None:
         msg = f"no match for {vif}"
         raise ValueError(msg)
 
-    assert type(res) is code_type
-    assert res.multiplier == multiplier
+    assert type(code) is code_type
+
+    if multiplier is not None:
+        assert code.multiplier == multiplier
 
 
 @pytest.mark.parametrize(
@@ -86,22 +92,22 @@ def test_energy_vifcodes(vif: VIF, code_type: VIFC | None, multiplier: float):
     [
         (
             VIF(0b0001_0000),
-            VolumeMeterCubeVIFCode,
+            VolumeMeterCubicVIFCode,
             1e-6,
         ),
         (
             VIF(0b0001_0111),
-            VolumeMeterCubeVIFCode,
+            VolumeMeterCubicVIFCode,
             1e1,
         ),
         (
             VIF(0b1001_0000),
-            VolumeMeterCubeVIFCode,
+            VolumeMeterCubicVIFCode,
             1e-6,
         ),
         (
             VIF(0b1001_0111),
-            VolumeMeterCubeVIFCode,
+            VolumeMeterCubicVIFCode,
             1e1,
         ),
     ],
@@ -228,32 +234,32 @@ def test_power_vifcodes(vif: VIF, code_type: VIFC | None, multiplier: float):
     [
         (
             VIF(0b0011_1000),
-            VolumeFlowCubicMeterPerHourVIFCode,
+            VolumeMeterCubicPerHourVIFCode,
             1e-6,
         ),
         (
             VIF(0b0011_1111),
-            VolumeFlowCubicMeterPerHourVIFCode,
+            VolumeMeterCubicPerHourVIFCode,
             10,
         ),
         (
             VIF(0b0100_0000),
-            VolumeFlowCubicMeterPerMinuteVIFCode,
+            VolumeMeterCubicPerMinuteVIFCode,
             1e-7,
         ),
         (
             VIF(0b0100_0111),
-            VolumeFlowCubicMeterPerMinuteVIFCode,
+            VolumeMeterCubicPerMinuteVIFCode,
             1,
         ),
         (
             VIF(0b0100_1000),
-            VolumeFlowCubicMeterPerSecondVIFCode,
+            VolumeMeterCubicPerSecondVIFCode,
             1e-9,
         ),
         (
             VIF(0b0100_1111),
-            VolumeFlowCubicMeterPerSecondVIFCode,
+            VolumeMeterCubicPerSecondVIFCode,
             1e-2,
         ),
     ],
@@ -262,3 +268,29 @@ def test_volume_flow_vifcodes(
     vif: VIF, code_type: VIFC | None, multiplier: float
 ):
     _assert_vif_code(vif, code_type, multiplier)
+
+
+@pytest.mark.parametrize(
+    ("vif", "code_type"),
+    [
+        (
+            VIF(0b0110_1100),
+            TimePointVIFCode,
+        ),
+        (
+            VIF(0b0110_1101),
+            TimePointVIFCode,
+        ),
+    ],
+)
+def test_time_point(vif: VIF, code_type: VIFC | None):
+    code = cast("TimePointVIFCode", get_vif_code(vif))
+
+    assert type(code) is code_type
+
+    if vif & 0x01:
+        assert code.is_datetime()
+        assert code.UNIT is DateTime
+    else:
+        assert code.is_date()
+        assert code.UNIT is Date
