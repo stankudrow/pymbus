@@ -2,6 +2,7 @@
 
 ## v0.4.0
 
+- Specific Telegram fields (A, C, CI, Data, Value) are submoduled ([PR-12](https://github.com/stankudrow/pymbus/pull/12)).
 - improve Telegram classes ([PR-11](https://github.com/stankudrow/pymbus/pull/11)):
   - the API of TelegramField is enriched:
     - `total_ordering` is enabled - the full set of arithmetic comparison operators are on
