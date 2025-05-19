@@ -2,11 +2,6 @@
 
 from pymbus.telegrams.base import TelegramField
 
-CF_DIRECTION_MASK = 0x40
-CF_FUNCTION_CODE_MASK = 0x0F
-CF_FCB_OR_ACD_MASK = 0x20
-CF_FCV_OR_DFC_MASK = 0x10
-
 
 class ControlField(TelegramField):
     """The "Control (C) Field" class.
@@ -60,13 +55,18 @@ class ControlField(TelegramField):
     code the true function or action of the message.
     """
 
+    CF_DIRECTION_MASK = 0x40
+    CF_FUNCTION_CODE_MASK = 0x0F
+    CF_FCB_OR_ACD_MASK = 0x20
+    CF_FCV_OR_DFC_MASK = 0x10
+
     def __init__(self, byte: int, *, validate: bool = False) -> None:
         super().__init__(byte, validate=validate)
 
-        self._code = byte & CF_FUNCTION_CODE_MASK
-        self._fcv_or_dfc = int((byte & CF_FCV_OR_DFC_MASK) != 0)
-        self._fcb_or_acd = int((byte & CF_FCB_OR_ACD_MASK) != 0)
-        self._direction = int((byte & CF_DIRECTION_MASK) != 0)
+        self._code = byte & self.CF_FUNCTION_CODE_MASK
+        self._fcv_or_dfc = int((byte & self.CF_FCV_OR_DFC_MASK) != 0)
+        self._fcb_or_acd = int((byte & self.CF_FCB_OR_ACD_MASK) != 0)
+        self._direction = int((byte & self.CF_DIRECTION_MASK) != 0)
 
     @property
     def code(self) -> int:

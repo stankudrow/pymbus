@@ -2,13 +2,6 @@
 
 from pymbus.telegrams.base import TelegramField
 
-AF_BROADCAST_ALL_SLAVES_REPLY_BYTE = 0xFE
-AF_BROADCAST_NO_SLAVE_REPLIES_BYTE = 0xFF
-AF_NETWORK_LAYER_BYTE = 0xFD
-AF_SLAVE_MAX_RANGE_VALUE_BYTE = 0xFA
-AF_SLAVE_MIN_RANGE_VALUE_BYTE = 0x01
-AF_SLAVE_UNCONFIGURED_BYTE = 0x00
-
 
 class AddressField(TelegramField):
     """The "Address (A) Field" class.
@@ -39,27 +32,34 @@ class AddressField(TelegramField):
     The remaining addresses 251 and 252 have been kept for future applications.
     """
 
+    AF_BROADCAST_ALL_SLAVES_REPLY_BYTE = 0xFE
+    AF_BROADCAST_NO_SLAVE_REPLIES_BYTE = 0xFF
+    AF_NETWORK_LAYER_BYTE = 0xFD
+    AF_SLAVE_MAX_RANGE_VALUE_BYTE = 0xFA
+    AF_SLAVE_MIN_RANGE_VALUE_BYTE = 0x01
+    AF_SLAVE_UNCONFIGURED_BYTE = 0x00
+
     def is_configured_slave(self) -> bool:
         return (
-            AF_SLAVE_MIN_RANGE_VALUE_BYTE
+            self.AF_SLAVE_MIN_RANGE_VALUE_BYTE
             <= self._byte
-            <= AF_SLAVE_MAX_RANGE_VALUE_BYTE
+            <= self.AF_SLAVE_MAX_RANGE_VALUE_BYTE
         )
 
     def is_unconfigured_slave(self) -> bool:
-        return self._byte == AF_SLAVE_UNCONFIGURED_BYTE
+        return self._byte == self.AF_SLAVE_UNCONFIGURED_BYTE
 
     def is_slave(self) -> bool:
         return self.is_configured_slave() or self.is_unconfigured_slave()
 
     def is_broadcast_all_reply(self) -> bool:
-        return self._byte == AF_BROADCAST_ALL_SLAVES_REPLY_BYTE
+        return self._byte == self.AF_BROADCAST_ALL_SLAVES_REPLY_BYTE
 
     def is_broadcast_no_replies(self) -> bool:
-        return self._byte == AF_BROADCAST_NO_SLAVE_REPLIES_BYTE
+        return self._byte == self.AF_BROADCAST_NO_SLAVE_REPLIES_BYTE
 
     def is_broadcast(self) -> bool:
         return self.is_broadcast_all_reply() or self.is_broadcast_no_replies()
 
     def is_network_layer(self) -> bool:
-        return self._byte == AF_NETWORK_LAYER_BYTE
+        return self._byte == self.AF_NETWORK_LAYER_BYTE

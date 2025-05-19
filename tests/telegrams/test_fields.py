@@ -3,7 +3,7 @@ from contextlib import nullcontext as does_not_raise
 
 import pytest
 
-from pymbus.telegrams.fields import ControlField
+from pymbus.telegrams.fields import AddressField, ControlField
 from pymbus.telegrams.fields import (
     DataInformationField as DIF,
 )
@@ -16,32 +16,18 @@ from pymbus.telegrams.fields import (
 from pymbus.telegrams.fields import (
     ValueInformationFieldExtension as VIFE,
 )
-from pymbus.telegrams.fields.address import (
-    AF_BROADCAST_ALL_SLAVES_REPLY_BYTE,
-    AF_BROADCAST_NO_SLAVE_REPLIES_BYTE,
-    AF_NETWORK_LAYER_BYTE,
-    AF_SLAVE_MAX_RANGE_VALUE_BYTE,
-    AF_SLAVE_MIN_RANGE_VALUE_BYTE,
-    AF_SLAVE_UNCONFIGURED_BYTE,
-    AddressField,
-)
 
 
 class TestAddressField:
     def test_is_unconfigured_slave(self):
-        af = AddressField(AF_SLAVE_UNCONFIGURED_BYTE)
+        af = AddressField(0)
 
         assert af.is_unconfigured_slave()
         assert not af.is_configured_slave()
 
     @pytest.mark.parametrize(
         "byte",
-        [
-            AF_SLAVE_MIN_RANGE_VALUE_BYTE,
-            AF_SLAVE_MIN_RANGE_VALUE_BYTE + 1,
-            AF_SLAVE_MAX_RANGE_VALUE_BYTE - 1,
-            AF_SLAVE_MAX_RANGE_VALUE_BYTE,
-        ],
+        [1, 2, 249, 250],
     )
     def test_is_configured_slave(self, byte: int):
         af = AddressField(byte)
@@ -52,11 +38,11 @@ class TestAddressField:
     @pytest.mark.parametrize(
         "byte",
         [
-            AF_SLAVE_UNCONFIGURED_BYTE,
-            AF_SLAVE_MIN_RANGE_VALUE_BYTE,
-            AF_SLAVE_MIN_RANGE_VALUE_BYTE + 1,
-            AF_SLAVE_MAX_RANGE_VALUE_BYTE - 1,
-            AF_SLAVE_MAX_RANGE_VALUE_BYTE,
+            0,
+            1,
+            2,
+            249,
+            250,
         ],
     )
     def test_is_slave(self, byte: int):
@@ -67,9 +53,9 @@ class TestAddressField:
     @pytest.mark.parametrize(
         ("byte", "answer"),
         [
-            (AF_BROADCAST_ALL_SLAVES_REPLY_BYTE, True),
-            (AF_BROADCAST_NO_SLAVE_REPLIES_BYTE, True),
-            (AF_NETWORK_LAYER_BYTE, False),
+            (254, True),
+            (255, True),
+            (253, False),
         ],
     )
     def test_is_broadcast(self, byte: int, answer: bool):
@@ -78,7 +64,7 @@ class TestAddressField:
         assert af.is_broadcast() == answer
 
     def test_is_network_layer(self):
-        af = AddressField(AF_NETWORK_LAYER_BYTE)
+        af = AddressField(253)
 
         assert not af.is_broadcast()
         assert not af.is_slave()
