@@ -3,16 +3,7 @@ from contextlib import nullcontext as does_not_raise
 
 import pytest
 
-from pymbus.telegrams.fields import (
-    AF_BROADCAST_ALL_SLAVES_REPLY_BYTE,
-    AF_BROADCAST_NO_SLAVE_REPLIES_BYTE,
-    AF_NETWORK_LAYER_BYTE,
-    AF_SLAVE_MAX_RANGE_VALUE_BYTE,
-    AF_SLAVE_MIN_RANGE_VALUE_BYTE,
-    AF_UNCONFIGURED_SLAVE_BYTE,
-    AddressField,
-    ControlField,
-)
+from pymbus.telegrams.fields import ControlField
 from pymbus.telegrams.fields import (
     DataInformationField as DIF,
 )
@@ -25,11 +16,20 @@ from pymbus.telegrams.fields import (
 from pymbus.telegrams.fields import (
     ValueInformationFieldExtension as VIFE,
 )
+from pymbus.telegrams.fields.address import (
+    AF_BROADCAST_ALL_SLAVES_REPLY_BYTE,
+    AF_BROADCAST_NO_SLAVE_REPLIES_BYTE,
+    AF_NETWORK_LAYER_BYTE,
+    AF_SLAVE_MAX_RANGE_VALUE_BYTE,
+    AF_SLAVE_MIN_RANGE_VALUE_BYTE,
+    AF_SLAVE_UNCONFIGURED_BYTE,
+    AddressField,
+)
 
 
 class TestAddressField:
     def test_is_unconfigured_slave(self):
-        af = AddressField(AF_UNCONFIGURED_SLAVE_BYTE)
+        af = AddressField(AF_SLAVE_UNCONFIGURED_BYTE)
 
         assert af.is_unconfigured_slave()
         assert not af.is_configured_slave()
@@ -52,7 +52,7 @@ class TestAddressField:
     @pytest.mark.parametrize(
         "byte",
         [
-            AF_UNCONFIGURED_SLAVE_BYTE,
+            AF_SLAVE_UNCONFIGURED_BYTE,
             AF_SLAVE_MIN_RANGE_VALUE_BYTE,
             AF_SLAVE_MIN_RANGE_VALUE_BYTE + 1,
             AF_SLAVE_MAX_RANGE_VALUE_BYTE - 1,
