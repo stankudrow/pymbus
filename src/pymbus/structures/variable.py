@@ -1,7 +1,4 @@
-"""M-Bus Telegram misc/dev codes.
-
-This module is unstablised and discouraged to be used (for now).
-"""
+"""M-Bus Variable structure module."""
 
 from enum import IntEnum
 
@@ -23,7 +20,7 @@ class DataFieldCode(IntEnum):
     bcd8 = 0b1100
     varlen = 0b1101
     bcd12 = 0b1110
-    special_func = 0b1111
+    func = 0b1111
 
 
 class FunctionFieldCode(IntEnum):
