@@ -22,7 +22,7 @@ class DataRecordHeader(TelegramContainer):
     """
 
     def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        it = iter(ibytes)  # type: ignore [arg-type]
+        it = iter(ibytes if ibytes else [])
 
         dib = DIB(ibytes=it)
         vib = VIB(ibytes=it)
@@ -58,7 +58,7 @@ class DataRecord(TelegramContainer):
     """
 
     def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        it = iter(ibytes)  # type: ignore [arg-type]
+        it = iter(ibytes if ibytes else [])
 
         drh = DataRecordHeader(ibytes=it)
         data = TelegramContainer(ibytes=it)

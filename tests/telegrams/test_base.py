@@ -13,24 +13,21 @@ from pymbus.telegrams.base import (
 
 class TestTelegramField:
     @pytest.mark.parametrize(
-        ("nbr", "validate", "expectation"),
+        ("nbr", "expectation"),
         [
-            (-1, True, pytest.raises(MBusValidationError)),
-            (-1, False, does_not_raise()),
-            (0, False, does_not_raise()),
-            (0, True, does_not_raise()),
-            (128, True, does_not_raise()),
-            (255, False, does_not_raise()),
-            (255, True, does_not_raise()),
-            (256, True, pytest.raises(MBusValidationError)),
-            (256, False, does_not_raise()),
+            (-1, pytest.raises(MBusValidationError)),
+            (0, does_not_raise()),
+            (128, does_not_raise()),
+            (255, does_not_raise()),
+            (256, pytest.raises(MBusValidationError)),
         ],
     )
-    def test_init(
-        self, nbr: int, validate: bool, expectation: AbstractContextManager
-    ):
+    def test_init(self, nbr: int, expectation: AbstractContextManager):
         with expectation:
-            TelegramField(nbr, validate=validate)
+            TelegramField(nbr)
+
+    def test_is_int(self):
+        assert isinstance(TelegramField(4), int)
 
     def test_comparison_ops(self):
         nbr = 21
@@ -60,6 +57,13 @@ class TestTelegramField:
 
         assert ~tf == ~nbr
 
+        assert (tf << 2) == (nbr << 2)
+        assert (tf >> 1) == (nbr >> 1)
+
+    def test_repr(self):
+        tf = TelegramField(255)
+        assert repr(tf) == "TelegramField(255)"
+
 
 class TestTelegramContainer:
     @pytest.mark.parametrize(
@@ -79,6 +83,19 @@ class TestTelegramContainer:
         with expectation:
             tc = TelegramContainer.from_hexstring(hexstr)
             assert tc == answer
+
+    def test_init(self):
+        ctx = does_not_raise()
+        nums = [0, 128, 255]
+
+        with ctx:
+            assert TelegramContainer(bytes(nums))
+        with ctx:
+            assert TelegramContainer(bytearray(nums))
+        with ctx:
+            assert TelegramContainer(nums)
+        with ctx:
+            assert TelegramContainer(TelegramField(num) for num in nums)
 
     @pytest.mark.parametrize(
         ("container", "key", "answer"),
