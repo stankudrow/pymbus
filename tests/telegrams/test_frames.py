@@ -31,7 +31,7 @@ class TestSingleFrame:
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
-            SingleFrame(it, validate=True)
+            SingleFrame(it)
 
 
 ## Short Frame section
@@ -67,7 +67,7 @@ class TestShortFrame:
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
-            ShortFrame(it, validate=True)
+            ShortFrame(it)
 
     def test_non_greediness(self):
         it = [SHORT_FRAME_START_BYTE, 2, 3, 4, FRAME_STOP_BYTE, 5]
@@ -125,7 +125,7 @@ class TestControlFrame:
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
-            ControlFrame(it, validate=True)
+            ControlFrame(it)
 
     def test_non_greediness(self):
         it = [
@@ -211,7 +211,7 @@ class TestLongFrame:
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
         with expectation:
-            LongFrame(it, validate=True)
+            LongFrame(it)
 
     def test_non_greediness(self):
         it = [

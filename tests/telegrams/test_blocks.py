@@ -69,7 +69,7 @@ class TestDIB:
     )
     def test_init(self, ints: list[int], expectation: AbstractContextManager):
         with expectation:
-            DIB(ints, validate=True)
+            DIB(ints)
 
     def test_iterability(self):
         it = [0b1000_0000, 0b1000_0001, 0b0111_0010]
@@ -150,7 +150,7 @@ class TestVIB:
     )
     def test_init(self, ints: list[int], expectation: AbstractContextManager):
         with expectation:
-            VIB(ints, validate=True)
+            VIB(ints)
 
     def test_iterability(self):
         it = [0b1000_0000, 0b1000_0001, 0b0111_0010]

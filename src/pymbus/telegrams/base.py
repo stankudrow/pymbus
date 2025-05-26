@@ -15,54 +15,19 @@ from pymbus.utils import validate_byte
 
 
 @total_ordering
-class TelegramField:
+class TelegramField(int):
     """The base "Field" class.
 
-    It is a base wrapper over a byte value.
+    Restricts int values to the byte range [0, 255].
+    Supports all operations that the `int` class does.
     """
 
-    def __init__(self, byte: int, *, validate: bool = False) -> None:
-        self._byte = validate_byte(byte) if validate else byte
-
-    def __and__(self, other: "int | TelegramField") -> int:
-        if isinstance(other, TelegramField):
-            other = other._byte
-        return self._byte & other
-
-    def __bool__(self) -> bool:
-        return bool(self._byte)
-
-    def __eq__(self, other: object) -> bool:
-        sbyte = self._byte
-        if isinstance(other, TelegramField):
-            other = other._byte
-        return sbyte == other
-
-    def __int__(self) -> int:
-        return self._byte
-
-    def __invert__(self) -> int:
-        return ~self._byte
-
-    def __lt__(self, other: "int | TelegramField") -> bool:
-        sbyte = self._byte
-        if isinstance(other, TelegramField):
-            other = other._byte
-        return sbyte < other
-
-    def __or__(self, other: "int | TelegramField") -> int:
-        if isinstance(other, TelegramField):
-            other = other._byte
-        return self._byte | other
+    def __init__(self, byte: int) -> None:
+        self._byte = validate_byte(byte)
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
-        return f"{cls_name}(byte={self._byte})"
-
-    def __xor__(self, other: "int | TelegramField") -> int:
-        if isinstance(other, TelegramField):
-            other = other._byte
-        return self._byte ^ other
+        return f"{cls_name}({self._byte})"
 
 
 TelegramByteType = int | TelegramField
@@ -74,8 +39,8 @@ TelegramByteIterableType = TelegramBytesType | Iterator[TelegramByteType]
 class TelegramContainer:
     """The base class for Telegram containers.
 
-    TelegramContainer consists of telegram fields.
-    When being instantiated, the incomin bytes are consumed greedily.
+    A telegram container consists of telegram fields.
+    When being instantiated, the incoming bytes are consumed greedily.
     """
 
     @classmethod
@@ -90,13 +55,9 @@ class TelegramContainer:
     def __init__(
         self,
         ibytes: None | TelegramByteIterableType = None,
-        *,
-        validate: bool = False,
     ) -> None:
         self._fields: list[TelegramField] = (
-            [TelegramField(int(ibyte), validate=validate) for ibyte in ibytes]
-            if ibytes
-            else []
+            [TelegramField(ibyte) for ibyte in ibytes] if ibytes else []
         )
 
     def __eq__(self, other: object) -> bool:
@@ -126,4 +87,4 @@ class TelegramContainer:
 
     def __repr__(self) -> str:
         cls_name = type(self).__name__
-        return f"{cls_name}(ibytes={self._fields})"
+        return f"{cls_name}({self._fields})"

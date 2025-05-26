@@ -19,8 +19,8 @@ class DataInformationField(TelegramField):
     EXTENSION_BIT_MASK = 0x80  # 0b1000_0000
     STORAGE_NUMBER_LSB_MASK = 0x40  # 0b0100_0000
 
-    def __init__(self, byte: int, *, validate: bool = False) -> None:
-        super().__init__(byte, validate=validate)
+    def __init__(self, byte: int) -> None:
+        super().__init__(byte)
 
         self._data = byte & self.DATA_FIELD_MASK
         self._func = (byte & self.FUNCTION_FIELD_MASK) >> 4
@@ -60,8 +60,8 @@ class DataInformationFieldExtension(TelegramField):
     STORAGE_NUMBER_MASK = 0x0F  # 0b0000_1111
     TARIFF_MASK = 0x30  # 0b0011_0000
 
-    def __init__(self, byte: int, *, validate: bool = False) -> None:
-        super().__init__(byte, validate=validate)
+    def __init__(self, byte: int) -> None:
+        super().__init__(byte)
 
         self._storage_number = byte & self.STORAGE_NUMBER_MASK
         self._tariff = (byte & self.TARIFF_MASK) >> 4

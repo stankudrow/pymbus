@@ -60,8 +60,8 @@ class ControlField(TelegramField):
     CF_FCB_OR_ACD_MASK = 0x20
     CF_FCV_OR_DFC_MASK = 0x10
 
-    def __init__(self, byte: int, *, validate: bool = False) -> None:
-        super().__init__(byte, validate=validate)
+    def __init__(self, byte: int) -> None:
+        super().__init__(byte)
 
         self._code = byte & self.CF_FUNCTION_CODE_MASK
         self._fcv_or_dfc = int((byte & self.CF_FCV_OR_DFC_MASK) != 0)

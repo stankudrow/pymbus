@@ -265,7 +265,7 @@ def get_vif_code(byte: int | VIF) -> None | VIFCode:  # noqa: C901
     None | ValueInformationFieldCode
     """
 
-    vif = VIF(int(byte), validate=True)
+    vif = VIF(int(byte))
     if vif < 0x08:  # Energy (Wh) -> E000_0nnn
         return EnergyWattHourVIFCode(vif)
     if vif < 0x10:  # Energy (J) -> E000_1nnn
