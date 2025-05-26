@@ -1,6 +1,8 @@
+from collections.abc import Iterable
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 from operator import and_, or_, xor
+from typing import Any
 
 import pytest
 
@@ -77,7 +79,7 @@ class TestTelegramContainer:
     def test_from_hexstring(
         self,
         hexstr: str,
-        answer: None | list[int],
+        answer: None | Iterable[int],
         expectation: AbstractContextManager,
     ):
         with expectation:
@@ -96,6 +98,13 @@ class TestTelegramContainer:
             assert TelegramContainer(nums)
         with ctx:
             assert TelegramContainer(TelegramField(num) for num in nums)
+
+    @pytest.mark.parametrize(
+        ("it", "value", "answer"),
+        [([], 0, False), ([1], 1, True), ([2], 3, False), ([4, 5], 5, True)],
+    )
+    def test_contains(self, it: Iterable, value: Any, answer: bool):
+        assert (value in TelegramContainer(it)) == answer
 
     @pytest.mark.parametrize(
         ("container", "key", "answer"),
@@ -134,3 +143,52 @@ class TestTelegramContainer:
         assert TelegramContainer([1, 2]) <= [2, 1]
         assert TelegramContainer([2, 1]) > [1]
         assert TelegramContainer([2, 1]) >= [1]
+
+    @pytest.mark.parametrize("it", [[], [1], [3, 2]])
+    def test_reversed(self, it: list[int]):
+        tc = TelegramContainer(it)
+
+        assert tuple(reversed(tc)) == tuple(reversed(it))
+
+    @pytest.mark.parametrize(
+        ("it", "value", "start", "stop", "expectation"),
+        [
+            ([], 0, 0, 0, pytest.raises(ValueError)),
+            ([1, 2], 2, 0, 2, does_not_raise()),
+            ([1, 2], 2, 1, 2, does_not_raise()),
+            ([1, 2], 2, 0, 1, pytest.raises(ValueError)),
+            ([1, 2], 1, 1, 2, pytest.raises(ValueError)),
+        ],
+    )
+    def test_index(
+        self,
+        it: Iterable,
+        value: Any,
+        *,
+        start: int,
+        stop: int,
+        expectation: AbstractContextManager,
+    ):
+        res, ans = None, None
+        seq = list(it)
+
+        with expectation:
+            res = TelegramContainer(seq).index(value, start, stop)
+
+        with expectation:
+            ans = seq.index(value, start, stop)
+
+        assert res == ans
+
+    @pytest.mark.parametrize(
+        ("it", "value", "answer"),
+        [
+            ([], 0, 0),
+            ([1], 0, 0),
+            ([2, 3], 2, 1),
+            ([1, 2, 1, 3], 1, 2),
+            ([3, 4, 1], 1, 1),
+        ],
+    )
+    def test_count(self, it: Iterable, value: Any, answer: Any):
+        assert TelegramContainer(it).count(value) == answer
