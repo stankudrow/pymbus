@@ -1,472 +1,823 @@
 """M-Bus Value Information Field Code module."""
 
-from pymbus.exceptions import MBusValidationError
+from dataclasses import dataclass
+from enum import Enum
+
 from pymbus.telegrams.fields import ValueInformationField as VIF
 
 
+class VIFCodeDescription(str, Enum):
+    """VIF code description(s)."""
+
+    no_description = ""
+    energy = "energy"
+    volume = "volume"
+    mass = "mass"
+    on_time = "on time"
+    operating_time = "operating time"
+    power = "power"
+    volume_flow = "volume flow"
+    mass_flow = "mass flow"
+    flow_temp = "flow temperature"
+    return_temp = "return temperature"
+    temp_difference = "temperature_difference"
+    external_temp = "external_temperature"
+    pressure = "pressure"
+    time_point = "time point"
+    hca = "heat cost allocator"
+    reserved = "reserved"
+    averaging_duration = "averaging duration"
+    actuality_duration = "actuality duration"
+    fabrication_no = "fabrication no"
+    enhanced = "enhanced"
+    bus_address = "bus address"
+    user = "user definable"
+    any = "any"
+    manufacturer = "manufacturer specific"
+    extension = "extension"
+
+
+class VIFCodeUnit(str, Enum):
+    """VIF code unit(s)."""
+
+    unknown = "unknown"
+    watt_hour = "Wh"
+    joule = "J"
+    meter_cubic = "m^3"
+    kilogram = "kg"
+    second = "s"
+    watt = "W"
+    joule_per_hour = "J/h"
+    meter_cubic_per_hour = "m^3/h"
+    meter_cubic_per_minute = "m^3/min"
+    meter_cubic_per_second = "m^3/s"
+    kilogram_per_hour = "kg/h"
+    celsius = "C"
+    kelvin = "K"
+    bar = "bar"
+    hca = "H.C.A. Units"
+    date = "date"  # for a time point
+    datetime = "datetime"  # for a time point
+
+
+@dataclass
 class VIFCode:
-    """VIF Code generic class.
-
-    Attributes
-    ----------
-    CMASK : int
-        coding mask - valid positions in the VIF code table
-    RMASK : int, default 0
-        range coding mask - useful for range VIF codes
-    UNIT : str, default ""
-        a unit of measurement for the class
-        individual codes may define own unit subclass
-    """
-
-    CMASK: int
-    RMASK: int = 0
-    UNIT: str = ""
-
-    def __init__(self, vif: VIF) -> None:
-        self._validate_vif_range(vif)
-        self._range: int = vif & self.RMASK
-        self._coef: int | float = 1
-        self._unit: str = self.UNIT
-
-    def _validate_vif_range(self, vif: VIF) -> None:
-        code = int(vif) & (~self.RMASK)
-        if (code & 0x7F) != self.CMASK:
-            cls_name = type(self).__name__
-            msg = f"{vif} does not match {cls_name}"
-            raise MBusValidationError(msg)
-
-    @property
-    def coef(self) -> int | float:
-        """Return multiplier/coeffiecent value.
-
-        By default, the value is 1.
-        """
-
-        return self._coef
-
-    @property
-    def range_code(self) -> int:
-        """Return range code value.
-
-        Roughly equivalent to `vif & self.RMASK`.
-        For ranged codes, this value may determine
-        the value of the `coef` attribute.
-        """
-
-        return self._range
-
-    @property
-    def unit(self) -> str:
-        """Return unit of measurement.
-
-        By default, an empty string -> non measureable.
-        """
-
-        return self._unit
-
-
-class EnergyWattHourVIFCode(VIFCode):
-    CMASK = 0b0000_0000
-    RMASK = 0b0000_0111
-    UNIT = "Wh"
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 3)
-
-
-class EnergyJouleVIFCode(VIFCode):
-    CMASK = 0b0000_1000
-    RMASK = 0b0000_0111
-    UNIT = "J"
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10**self.range_code
-
-
-class VolumeMeterCubicVIFCode(VIFCode):
-    CMASK = 0b0001_0000
-    RMASK = 0b0000_0111
-    UNIT = "m^3"
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 6)
-
-
-class MassKilogramVIFCode(VIFCode):
-    CMASK = 0b0001_1000
-    RMASK = 0b0000_0111
-    UNIT = "kg"
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 3)
-
-
-class TimePartVIFCode(VIFCode):
-    """Time part VIF code class.
-
-    A helper class for subtyping time VIF codes.
-    """
-
-    # CMASK is defined in the subclasses
-    RMASK = 0b0000_0011
-    UNIT = "time"
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        match self.range_code:
-            case 3:
-                self._unit = "day"
-            case 2:
-                self._unit = "hour"
-            case 1:
-                self._unit = "minute"
-            case 0:
-                self._unit = "second"
-
-    def is_day(self) -> bool:
-        """Return True if Time is in days."""
-        return self.range_code == 3
-
-    def is_hour(self) -> bool:
-        """Return True if Time is in hours."""
-        return self.range_code == 2
-
-    def is_minute(self) -> bool:
-        """Return True if Time is in minutes."""
-        return self.range_code == 1
-
-    def is_second(self) -> bool:
-        """Return True if Time is in seconds."""
-        return not self.range_code
-
-
-class OnTimeVIFCode(TimePartVIFCode):
-    CMASK = 0b0010_0000
-
-
-class OperatingTimeVIFCode(TimePartVIFCode):
-    CMASK = 0b0010_0100
-
-
-class PowerWattVIFCode(VIFCode):
-    CMASK = 0b0010_1000
-    RMASK = 0b0000_0111
-    UNIT = "W"
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 3)
-
-
-class PowerJoulePerHourVIFCode(VIFCode):
-    CMASK = 0b0011_0000
-    RMASK = 0b0000_0111
-    UNIT = "J/h"
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10**self.range_code
-
-
-class VolumeFlowMeterCubicPerHourVIFCode(VIFCode):
-    CMASK = 0b0011_1000
-    RMASK = 0b0000_0111
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 6)
-
-
-class VolumeFlowMeterCubicPerMinuteVIFCode(VIFCode):
-    CMASK = 0b0100_0000
-    RMASK = 0b0000_0111
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 7)
-
-
-class VolumeFlowMeterCubicPerSecondVIFCode(VIFCode):
-    CMASK = 0b0100_1000
-    RMASK = 0b0000_0111
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 9)
-
-
-class MassFlowKilogramPerHourVIFCode(VIFCode):
-    CMASK = 0b0101_0000
-    RMASK = 0b0000_0111
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 3)
-
-
-class TemperatureFlowCelsiusVIFCode(VIFCode):
-    CMASK = 0b0101_1000
-    RMASK = 0b0000_0011
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 3)
-
-
-class TemperatureReturnCelsiusVIFCode(VIFCode):
-    CMASK = 0b0101_1100
-    RMASK = 0b0000_0011
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 3)
-
-
-class TemperatureDifferenceKelvinVIFCode(VIFCode):
-    CMASK = 0b0110_0000
-    RMASK = 0b0000_0011
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 3)
-
-
-class TemperatureExternalCelsiusVIFCode(VIFCode):
-    CMASK = 0b0110_0100
-    RMASK = 0b0000_0011
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 3)
-
-
-class PressureBarVIFCode(VIFCode):
-    CMASK = 0b0110_1000
-    RMASK = 0b0000_0011
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._coef = 10 ** (self.range_code - 3)
-
-
-class TimePointVIFCode(VIFCode):
-    CMASK = 0b0110_1100
-    RMASK = 0b0000_0001
-    UNIT = "date | datetime"
-
-    def __init__(self, vif: VIF) -> None:
-        super().__init__(vif)
-        self._unit = "datetime" if self.range_code else "date"
-        self._coef = 1
-
-    def is_date(self) -> bool:
-        """Return True if TimePoint has the LSB=0."""
-
-        return not self.range_code
-
-    def is_datetime(self) -> bool:
-        """Return True if TimePoint has the LSB=1."""
-
-        return bool(self.range_code)
-
-
-class HeatCostAllocatorUnitsVIFCode(VIFCode):
-    CMASK = 0b0110_1110
-
-
-class ReservedVIFCode(VIFCode):
-    CMASK = 0b0110_1111
-
-
-class DurationAveragingVIFCode(TimePartVIFCode):
-    CMASK = 0b0111_0000
-
-
-class DurationActualityVIFCode(TimePartVIFCode):
-    CMASK = 0b0111_0100
-
-
-class FabricationNoVIFCode(VIFCode):
-    CMASK = 0b0111_1000
-
-
-class EnhancedIdentificationVIFCode(VIFCode):
-    CMASK = 0b0111_1001
-
-
-class BusAddressVIFCode(VIFCode):
-    CMASK = 0b0111_1010
-
-
-class UserDefinedVIFCode(VIFCode):
-    CMASK = 0b0111_1100
-
-
-class AnyVIFCode(VIFCode):
-    CMASK = 0b0111_1110
-
-
-class ManufacturerSpecificVIFCode(VIFCode):
-    CMASK = 0b0111_1111
-
-
-_VIF_CODE_MAP: dict[int, type[VIFCode]] = {
-    # E000_0nnn
-    0b0000_0000: EnergyWattHourVIFCode,
-    0b0000_0001: EnergyWattHourVIFCode,
-    0b0000_0010: EnergyWattHourVIFCode,
-    0b0000_0011: EnergyWattHourVIFCode,
-    0b0000_0100: EnergyWattHourVIFCode,
-    0b0000_0101: EnergyWattHourVIFCode,
-    0b0000_0110: EnergyWattHourVIFCode,
-    0b0000_0111: EnergyWattHourVIFCode,
-    # E000_1nnn
-    0b0000_1000: EnergyJouleVIFCode,
-    0b0000_1001: EnergyJouleVIFCode,
-    0b0000_1010: EnergyJouleVIFCode,
-    0b0000_1011: EnergyJouleVIFCode,
-    0b0000_1100: EnergyJouleVIFCode,
-    0b0000_1101: EnergyJouleVIFCode,
-    0b0000_1110: EnergyJouleVIFCode,
-    0b0000_1111: EnergyJouleVIFCode,
-    # E001_0nnn
-    0b0001_0000: VolumeMeterCubicVIFCode,
-    0b0001_0001: VolumeMeterCubicVIFCode,
-    0b0001_0010: VolumeMeterCubicVIFCode,
-    0b0001_0011: VolumeMeterCubicVIFCode,
-    0b0001_0100: VolumeMeterCubicVIFCode,
-    0b0001_0101: VolumeMeterCubicVIFCode,
-    0b0001_0110: VolumeMeterCubicVIFCode,
-    0b0001_0111: VolumeMeterCubicVIFCode,
-    # E001_1nnn
-    0b0001_1000: MassKilogramVIFCode,
-    0b0001_1001: MassKilogramVIFCode,
-    0b0001_1010: MassKilogramVIFCode,
-    0b0001_1011: MassKilogramVIFCode,
-    0b0001_1100: MassKilogramVIFCode,
-    0b0001_1101: MassKilogramVIFCode,
-    0b0001_1110: MassKilogramVIFCode,
-    0b0001_1111: MassKilogramVIFCode,
-    # E010_00nn
-    0b0010_0000: OnTimeVIFCode,
-    0b0010_0001: OnTimeVIFCode,
-    0b0010_0010: OnTimeVIFCode,
-    0b0010_0011: OnTimeVIFCode,
-    # E010_01nn
-    0b0010_0100: OperatingTimeVIFCode,
-    0b0010_0101: OperatingTimeVIFCode,
-    0b0010_0110: OperatingTimeVIFCode,
-    0b0010_0111: OperatingTimeVIFCode,
-    # E010_1nnn
-    0b0010_1000: PowerWattVIFCode,
-    0b0010_1001: PowerWattVIFCode,
-    0b0010_1010: PowerWattVIFCode,
-    0b0010_1011: PowerWattVIFCode,
-    0b0010_1100: PowerWattVIFCode,
-    0b0010_1101: PowerWattVIFCode,
-    0b0010_1110: PowerWattVIFCode,
-    0b0010_1111: PowerWattVIFCode,
-    # E011_0nnn
-    0b0011_0000: PowerJoulePerHourVIFCode,
-    0b0011_0001: PowerJoulePerHourVIFCode,
-    0b0011_0010: PowerJoulePerHourVIFCode,
-    0b0011_0011: PowerJoulePerHourVIFCode,
-    0b0011_0100: PowerJoulePerHourVIFCode,
-    0b0011_0101: PowerJoulePerHourVIFCode,
-    0b0011_0110: PowerJoulePerHourVIFCode,
-    0b0011_0111: PowerJoulePerHourVIFCode,
-    # E011_1nnn
-    0b0011_1000: VolumeFlowMeterCubicPerHourVIFCode,
-    0b0011_1001: VolumeFlowMeterCubicPerHourVIFCode,
-    0b0011_1010: VolumeFlowMeterCubicPerHourVIFCode,
-    0b0011_1011: VolumeFlowMeterCubicPerHourVIFCode,
-    0b0011_1100: VolumeFlowMeterCubicPerHourVIFCode,
-    0b0011_1101: VolumeFlowMeterCubicPerHourVIFCode,
-    0b0011_1110: VolumeFlowMeterCubicPerHourVIFCode,
-    0b0011_1111: VolumeFlowMeterCubicPerHourVIFCode,
-    # E100_0nnn
-    0b0100_0000: VolumeFlowMeterCubicPerMinuteVIFCode,
-    0b0100_0001: VolumeFlowMeterCubicPerMinuteVIFCode,
-    0b0100_0010: VolumeFlowMeterCubicPerMinuteVIFCode,
-    0b0100_0011: VolumeFlowMeterCubicPerMinuteVIFCode,
-    0b0100_0100: VolumeFlowMeterCubicPerMinuteVIFCode,
-    0b0100_0101: VolumeFlowMeterCubicPerMinuteVIFCode,
-    0b0100_0110: VolumeFlowMeterCubicPerMinuteVIFCode,
-    0b0100_0111: VolumeFlowMeterCubicPerMinuteVIFCode,
-    # E100_1nnn
-    0b0100_1000: VolumeFlowMeterCubicPerSecondVIFCode,
-    0b0100_1001: VolumeFlowMeterCubicPerSecondVIFCode,
-    0b0100_1010: VolumeFlowMeterCubicPerSecondVIFCode,
-    0b0100_1011: VolumeFlowMeterCubicPerSecondVIFCode,
-    0b0100_1100: VolumeFlowMeterCubicPerSecondVIFCode,
-    0b0100_1101: VolumeFlowMeterCubicPerSecondVIFCode,
-    0b0100_1110: VolumeFlowMeterCubicPerSecondVIFCode,
-    0b0100_1111: VolumeFlowMeterCubicPerSecondVIFCode,
-    # E101_0nnn
-    0b0101_0000: MassFlowKilogramPerHourVIFCode,
-    0b0101_0001: MassFlowKilogramPerHourVIFCode,
-    0b0101_0010: MassFlowKilogramPerHourVIFCode,
-    0b0101_0011: MassFlowKilogramPerHourVIFCode,
-    0b0101_0100: MassFlowKilogramPerHourVIFCode,
-    0b0101_0101: MassFlowKilogramPerHourVIFCode,
-    0b0101_0110: MassFlowKilogramPerHourVIFCode,
-    0b0101_0111: MassFlowKilogramPerHourVIFCode,
-    # E101_10nn
-    0b0101_1000: TemperatureFlowCelsiusVIFCode,
-    0b0101_1001: TemperatureFlowCelsiusVIFCode,
-    0b0101_1010: TemperatureFlowCelsiusVIFCode,
-    0b0101_1011: TemperatureFlowCelsiusVIFCode,
-    # E101_11nn
-    0b0101_1100: TemperatureReturnCelsiusVIFCode,
-    0b0101_1101: TemperatureReturnCelsiusVIFCode,
-    0b0101_1110: TemperatureReturnCelsiusVIFCode,
-    0b0101_1111: TemperatureReturnCelsiusVIFCode,
-    # E110_00nn
-    0b0110_0000: TemperatureDifferenceKelvinVIFCode,
-    0b0110_0001: TemperatureDifferenceKelvinVIFCode,
-    0b0110_0010: TemperatureDifferenceKelvinVIFCode,
-    0b0110_0011: TemperatureDifferenceKelvinVIFCode,
-    # E110_01nn
-    0b0110_0100: TemperatureExternalCelsiusVIFCode,
-    0b0110_0101: TemperatureExternalCelsiusVIFCode,
-    0b0110_0110: TemperatureExternalCelsiusVIFCode,
-    0b0110_0111: TemperatureExternalCelsiusVIFCode,
-    # E110_10nn
-    0b0110_1000: PressureBarVIFCode,
-    0b0110_1001: PressureBarVIFCode,
-    0b0110_1010: PressureBarVIFCode,
-    0b0110_1011: PressureBarVIFCode,
-    # E110_110n
-    0b0110_1100: TimePointVIFCode,
-    0b0110_1101: TimePointVIFCode,
-    # E110_1110
-    0b0110_1110: HeatCostAllocatorUnitsVIFCode,
-    # E110_1111 -> reserved
-    0b0110_1111: ReservedVIFCode,
-    # E111_00nn
-    0b0111_0000: DurationAveragingVIFCode,
-    0b0111_0001: DurationAveragingVIFCode,
-    0b0111_0010: DurationAveragingVIFCode,
-    0b0111_0011: DurationAveragingVIFCode,
-    # E111_01nn
-    0b0111_0100: DurationActualityVIFCode,
-    0b0111_0101: DurationActualityVIFCode,
-    0b0111_0110: DurationActualityVIFCode,
-    0b0111_0111: DurationActualityVIFCode,
+    """Value Information Code."""
+
+    code: int
+    coef: int | float = 1
+    desc: str | VIFCodeDescription = VIFCodeDescription.no_description
+    unit: str | VIFCodeUnit = VIFCodeUnit.unknown
+
+
+_VIF_CODE_MAP: dict[int, VIFCode] = {
+    # E000_0nnn - Energy (Watt * hour = Wh)
+    0b0000_0000: VIFCode(
+        code=0x00,
+        coef=1e-3,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.watt_hour,
+    ),
+    0b0000_0001: VIFCode(
+        code=0x01,
+        coef=1e-2,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.watt_hour,
+    ),
+    0b0000_0010: VIFCode(
+        code=0x02,
+        coef=1e-1,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.watt_hour,
+    ),
+    0b0000_0011: VIFCode(
+        code=0x03,
+        coef=1e0,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.watt_hour,
+    ),
+    0b0000_0100: VIFCode(
+        code=0x04,
+        coef=1e1,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.watt_hour,
+    ),
+    0b0000_0101: VIFCode(
+        code=0x05,
+        coef=1e2,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.watt_hour,
+    ),
+    0b0000_0110: VIFCode(
+        code=0x06,
+        coef=1e3,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.watt_hour,
+    ),
+    0b0000_0111: VIFCode(
+        code=0x07,
+        coef=1e4,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.watt_hour,
+    ),
+    # E000_1nnn - Energy (Joule = J)
+    0b0000_1000: VIFCode(
+        code=0x08,
+        coef=1e0,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.joule,
+    ),
+    0b0000_1001: VIFCode(
+        code=0x09,
+        coef=1e1,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.joule,
+    ),
+    0b0000_1010: VIFCode(
+        code=0x0A,
+        coef=1e2,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.joule,
+    ),
+    0b0000_1011: VIFCode(
+        code=0x0B,
+        coef=1e3,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.joule,
+    ),
+    0b0000_1100: VIFCode(
+        code=0x0C,
+        coef=1e4,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.joule,
+    ),
+    0b0000_1101: VIFCode(
+        code=0x0D,
+        coef=1e5,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.joule,
+    ),
+    0b0000_1110: VIFCode(
+        code=0x0E,
+        coef=1e6,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.joule,
+    ),
+    0b0000_1111: VIFCode(
+        code=0x0F,
+        coef=1e7,
+        desc=VIFCodeDescription.energy,
+        unit=VIFCodeUnit.joule,
+    ),
+    # E001_0nnn - Volume (Meter cubic = m^3)
+    0b0001_0000: VIFCode(
+        code=0x10,
+        coef=1e-6,
+        desc=VIFCodeDescription.volume,
+        unit=VIFCodeUnit.meter_cubic,
+    ),
+    0b0001_0001: VIFCode(
+        code=0x11,
+        coef=1e-5,
+        desc=VIFCodeDescription.volume,
+        unit=VIFCodeUnit.meter_cubic,
+    ),
+    0b0001_0010: VIFCode(
+        code=0x12,
+        coef=1e-4,
+        desc=VIFCodeDescription.volume,
+        unit=VIFCodeUnit.meter_cubic,
+    ),
+    0b0001_0011: VIFCode(
+        code=0x13,
+        coef=1e-3,
+        desc=VIFCodeDescription.volume,
+        unit=VIFCodeUnit.meter_cubic,
+    ),
+    0b0001_0100: VIFCode(
+        code=0x14,
+        coef=1e-2,
+        desc=VIFCodeDescription.volume,
+        unit=VIFCodeUnit.meter_cubic,
+    ),
+    0b0001_0101: VIFCode(
+        code=0x15,
+        coef=1e-1,
+        desc=VIFCodeDescription.volume,
+        unit=VIFCodeUnit.meter_cubic,
+    ),
+    0b0001_0110: VIFCode(
+        code=0x16,
+        coef=1e0,
+        desc=VIFCodeDescription.volume,
+        unit=VIFCodeUnit.meter_cubic,
+    ),
+    0b0001_0111: VIFCode(
+        code=0x17,
+        coef=1e1,
+        desc=VIFCodeDescription.volume,
+        unit=VIFCodeUnit.meter_cubic,
+    ),
+    # E001_1nnn - Mass (Kilogram = kg)
+    0b0001_1000: VIFCode(
+        code=0x18,
+        coef=1e-3,
+        desc=VIFCodeDescription.mass,
+        unit=VIFCodeUnit.kilogram,
+    ),
+    0b0001_1001: VIFCode(
+        code=0x19,
+        coef=1e-2,
+        desc=VIFCodeDescription.mass,
+        unit=VIFCodeUnit.kilogram,
+    ),
+    0b0001_1010: VIFCode(
+        code=0x1A,
+        coef=1e-1,
+        desc=VIFCodeDescription.mass,
+        unit=VIFCodeUnit.kilogram,
+    ),
+    0b0001_1011: VIFCode(
+        code=0x1B,
+        coef=1e0,
+        desc=VIFCodeDescription.mass,
+        unit=VIFCodeUnit.kilogram,
+    ),
+    0b0001_1100: VIFCode(
+        code=0x1C,
+        coef=1e1,
+        desc=VIFCodeDescription.mass,
+        unit=VIFCodeUnit.kilogram,
+    ),
+    0b0001_1101: VIFCode(
+        code=0x1D,
+        coef=1e2,
+        desc=VIFCodeDescription.mass,
+        unit=VIFCodeUnit.kilogram,
+    ),
+    0b0001_1110: VIFCode(
+        code=0x1E,
+        coef=1e3,
+        desc=VIFCodeDescription.mass,
+        unit=VIFCodeUnit.kilogram,
+    ),
+    0b0001_1111: VIFCode(
+        code=0x1F,
+        coef=1e4,
+        desc=VIFCodeDescription.mass,
+        unit=VIFCodeUnit.kilogram,
+    ),
+    # E010_00nn - On time (in seconds)
+    0b0010_0000: VIFCode(
+        code=0x20,
+        coef=1,
+        desc=VIFCodeDescription.on_time,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0010_0001: VIFCode(
+        code=0x21,
+        coef=60,
+        desc=VIFCodeDescription.on_time,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0010_0010: VIFCode(
+        code=0x22,
+        coef=3600,
+        desc=VIFCodeDescription.on_time,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0010_0011: VIFCode(
+        code=0x23,
+        coef=86400,
+        desc=VIFCodeDescription.on_time,
+        unit=VIFCodeUnit.second,
+    ),
+    # E010_01nn - Operating Time (like On Time)
+    0b0010_0100: VIFCode(
+        code=0x24,
+        coef=1,
+        desc=VIFCodeDescription.operating_time,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0010_0101: VIFCode(
+        code=0x25,
+        coef=60,
+        desc=VIFCodeDescription.operating_time,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0010_0110: VIFCode(
+        code=0x26,
+        coef=3600,
+        desc=VIFCodeDescription.operating_time,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0010_0111: VIFCode(
+        code=0x27,
+        coef=86400,
+        desc=VIFCodeDescription.operating_time,
+        unit=VIFCodeUnit.second,
+    ),
+    # E010_1nnn - Power (Watt = W)
+    0b0010_1000: VIFCode(
+        code=0x28,
+        coef=1e-3,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.watt,
+    ),
+    0b0010_1001: VIFCode(
+        code=0x29,
+        coef=1e-2,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.watt,
+    ),
+    0b0010_1010: VIFCode(
+        code=0x2A,
+        coef=1e-1,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.watt,
+    ),
+    0b0010_1011: VIFCode(
+        code=0x2B,
+        coef=1e0,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.watt,
+    ),
+    0b0010_1100: VIFCode(
+        code=0x2C,
+        coef=1e1,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.watt,
+    ),
+    0b0010_1101: VIFCode(
+        code=0x2D,
+        coef=1e2,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.watt,
+    ),
+    0b0010_1110: VIFCode(
+        code=0x2E,
+        coef=1e3,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.watt,
+    ),
+    0b0010_1111: VIFCode(
+        code=0x2F,
+        coef=1e4,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.watt,
+    ),
+    # E011_0nnn - Power (Joule per hour = J/h)
+    0b0011_0000: VIFCode(
+        code=0x30,
+        coef=1e0,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.joule_per_hour,
+    ),
+    0b0011_0001: VIFCode(
+        code=0x31,
+        coef=1e1,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.joule_per_hour,
+    ),
+    0b0011_0010: VIFCode(
+        code=0x32,
+        coef=1e2,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.joule_per_hour,
+    ),
+    0b0011_0011: VIFCode(
+        code=0x33,
+        coef=1e3,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.joule_per_hour,
+    ),
+    0b0011_0100: VIFCode(
+        code=0x34,
+        coef=1e4,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.joule_per_hour,
+    ),
+    0b0011_0101: VIFCode(
+        code=0x35,
+        coef=1e5,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.joule_per_hour,
+    ),
+    0b0011_0110: VIFCode(
+        code=0x36,
+        coef=1e6,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.joule_per_hour,
+    ),
+    0b0011_0111: VIFCode(
+        code=0x37,
+        coef=1e7,
+        desc=VIFCodeDescription.power,
+        unit=VIFCodeUnit.joule_per_hour,
+    ),
+    # E011_1nnn - Volume flow (Meter cubic per hour = m^3/h)
+    0b0011_1000: VIFCode(
+        code=0x38,
+        coef=1e-6,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_hour,
+    ),
+    0b0011_1001: VIFCode(
+        code=0x39,
+        coef=1e-5,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_hour,
+    ),
+    0b0011_1010: VIFCode(
+        code=0x3A,
+        coef=1e-4,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_hour,
+    ),
+    0b0011_1011: VIFCode(
+        code=0x3B,
+        coef=1e-3,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_hour,
+    ),
+    0b0011_1100: VIFCode(
+        code=0x3C,
+        coef=1e-2,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_hour,
+    ),
+    0b0011_1101: VIFCode(
+        code=0x3D,
+        coef=1e-1,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_hour,
+    ),
+    0b0011_1110: VIFCode(
+        code=0x3E,
+        coef=1e0,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_hour,
+    ),
+    0b0011_1111: VIFCode(
+        code=0x3F,
+        coef=1e1,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_hour,
+    ),
+    # E100_0nnn - Volume flow (Meter cubic per minute = m^3/min)
+    0b0100_0000: VIFCode(
+        code=0x40,
+        coef=1e-7,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_minute,
+    ),
+    0b0100_0001: VIFCode(
+        code=0x41,
+        coef=1e-6,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_minute,
+    ),
+    0b0100_0010: VIFCode(
+        code=0x42,
+        coef=1e-5,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_minute,
+    ),
+    0b0100_0011: VIFCode(
+        code=0x43,
+        coef=1e-4,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_minute,
+    ),
+    0b0100_0100: VIFCode(
+        code=0x44,
+        coef=1e-3,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_minute,
+    ),
+    0b0100_0101: VIFCode(
+        code=0x45,
+        coef=1e-2,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_minute,
+    ),
+    0b0100_0110: VIFCode(
+        code=0x46,
+        coef=1e-1,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_minute,
+    ),
+    0b0100_0111: VIFCode(
+        code=0x47,
+        coef=1e0,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_minute,
+    ),
+    # E100_1nnn - Volume flow (Meter cubic per second = m^3/s)
+    0b0100_1000: VIFCode(
+        code=0x48,
+        coef=1e-9,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_second,
+    ),
+    0b0100_1001: VIFCode(
+        code=0x49,
+        coef=1e-8,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_second,
+    ),
+    0b0100_1010: VIFCode(
+        code=0x4A,
+        coef=1e-7,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_second,
+    ),
+    0b0100_1011: VIFCode(
+        code=0x4B,
+        coef=1e-6,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_second,
+    ),
+    0b0100_1100: VIFCode(
+        code=0x4C,
+        coef=1e-5,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_second,
+    ),
+    0b0100_1101: VIFCode(
+        code=0x4D,
+        coef=1e-4,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_second,
+    ),
+    0b0100_1110: VIFCode(
+        code=0x4E,
+        coef=1e-3,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_second,
+    ),
+    0b0100_1111: VIFCode(
+        code=0x4F,
+        coef=1e-2,
+        desc=VIFCodeDescription.volume_flow,
+        unit=VIFCodeUnit.meter_cubic_per_second,
+    ),
+    # E101_0nnn - Mass flow (Kilogram per hour = kg/h)
+    0b0101_0000: VIFCode(
+        code=0x50,
+        coef=1e-3,
+        desc=VIFCodeDescription.mass_flow,
+        unit=VIFCodeUnit.kilogram_per_hour,
+    ),
+    0b0101_0001: VIFCode(
+        code=0x51,
+        coef=1e-2,
+        desc=VIFCodeDescription.mass_flow,
+        unit=VIFCodeUnit.kilogram_per_hour,
+    ),
+    0b0101_0010: VIFCode(
+        code=0x52,
+        coef=1e-1,
+        desc=VIFCodeDescription.mass_flow,
+        unit=VIFCodeUnit.kilogram_per_hour,
+    ),
+    0b0101_0011: VIFCode(
+        code=0x53,
+        coef=1e0,
+        desc=VIFCodeDescription.mass_flow,
+        unit=VIFCodeUnit.kilogram_per_hour,
+    ),
+    0b0101_0100: VIFCode(
+        code=0x54,
+        coef=1e1,
+        desc=VIFCodeDescription.mass_flow,
+        unit=VIFCodeUnit.kilogram_per_hour,
+    ),
+    0b0101_0101: VIFCode(
+        code=0x55,
+        coef=1e2,
+        desc=VIFCodeDescription.mass_flow,
+        unit=VIFCodeUnit.kilogram_per_hour,
+    ),
+    0b0101_0110: VIFCode(
+        code=0x56,
+        coef=1e3,
+        desc=VIFCodeDescription.mass_flow,
+        unit=VIFCodeUnit.kilogram_per_hour,
+    ),
+    0b0101_0111: VIFCode(
+        code=0x57,
+        coef=1e4,
+        desc=VIFCodeDescription.mass_flow,
+        unit=VIFCodeUnit.kilogram_per_hour,
+    ),
+    # E101_10nn - Flow temperature (Celsius = C)
+    0b0101_1000: VIFCode(
+        code=0x58,
+        coef=1e-3,
+        desc=VIFCodeDescription.flow_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    0b0101_1001: VIFCode(
+        code=0x59,
+        coef=1e-2,
+        desc=VIFCodeDescription.flow_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    0b0101_1010: VIFCode(
+        code=0x5A,
+        coef=1e-1,
+        desc=VIFCodeDescription.flow_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    0b0101_1011: VIFCode(
+        code=0x5B,
+        coef=1e0,
+        desc=VIFCodeDescription.flow_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    # # E101_11nn - Return temperature (Celsius = C)
+    0b0101_1100: VIFCode(
+        code=0x5C,
+        coef=1e-3,
+        desc=VIFCodeDescription.return_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    0b0101_1101: VIFCode(
+        code=0x5D,
+        coef=1e-2,
+        desc=VIFCodeDescription.return_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    0b0101_1110: VIFCode(
+        code=0x5E,
+        coef=1e-1,
+        desc=VIFCodeDescription.return_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    0b0101_1111: VIFCode(
+        code=0x5F,
+        coef=1e0,
+        desc=VIFCodeDescription.return_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    # E110_00nn - Temperature difference (Kelvin = K)
+    0b0110_0000: VIFCode(
+        code=0x60,
+        coef=1e-3,
+        desc=VIFCodeDescription.temp_difference,
+        unit=VIFCodeUnit.kelvin,
+    ),
+    0b0110_0001: VIFCode(
+        code=0x61,
+        coef=1e-2,
+        desc=VIFCodeDescription.temp_difference,
+        unit=VIFCodeUnit.kelvin,
+    ),
+    0b0110_0010: VIFCode(
+        code=0x62,
+        coef=1e-1,
+        desc=VIFCodeDescription.temp_difference,
+        unit=VIFCodeUnit.kelvin,
+    ),
+    0b0110_0011: VIFCode(
+        code=0x63,
+        coef=1e0,
+        desc=VIFCodeDescription.temp_difference,
+        unit=VIFCodeUnit.kelvin,
+    ),
+    # E110_01nn - External temperature (Celsius = C)
+    0b0110_0100: VIFCode(
+        code=0x64,
+        coef=1e-3,
+        desc=VIFCodeDescription.external_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    0b0110_0101: VIFCode(
+        code=0x65,
+        coef=1e-2,
+        desc=VIFCodeDescription.external_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    0b0110_0110: VIFCode(
+        code=0x66,
+        coef=1e-1,
+        desc=VIFCodeDescription.external_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    0b0110_0111: VIFCode(
+        code=0x67,
+        coef=1e0,
+        desc=VIFCodeDescription.external_temp,
+        unit=VIFCodeUnit.celsius,
+    ),
+    # E110_10nn - Pressure (bar)
+    0b0110_1000: VIFCode(
+        code=0x68,
+        coef=1e-3,
+        desc=VIFCodeDescription.pressure,
+        unit=VIFCodeUnit.bar,
+    ),
+    0b0110_1001: VIFCode(
+        code=0x69,
+        coef=1e-2,
+        desc=VIFCodeDescription.pressure,
+        unit=VIFCodeUnit.bar,
+    ),
+    0b0110_1010: VIFCode(
+        code=0x6A,
+        coef=1e-1,
+        desc=VIFCodeDescription.pressure,
+        unit=VIFCodeUnit.bar,
+    ),
+    0b0110_1011: VIFCode(
+        code=0x6B,
+        coef=1e0,
+        desc=VIFCodeDescription.pressure,
+        unit=VIFCodeUnit.bar,
+    ),
+    # E110_110n - Time point (date or datetime)
+    0b0110_1100: VIFCode(
+        code=0x6C,
+        coef=1,
+        desc=VIFCodeDescription.time_point,
+        unit=VIFCodeUnit.date,
+    ),
+    0b0110_1101: VIFCode(
+        code=0x6D,
+        coef=1,
+        desc=VIFCodeDescription.time_point,
+        unit=VIFCodeUnit.datetime,
+    ),
+    # E110_1110 = Heat Cost Allocator (H.C.A.) Units
+    0b0110_1110: VIFCode(
+        code=0x6E, coef=1e0, desc=VIFCodeDescription.hca, unit=VIFCodeUnit.hca
+    ),
+    # Reserved
+    0b0110_1111: VIFCode(code=0x6F, desc=VIFCodeDescription.reserved),
+    # E111_00nn - Averaging duration (in seconds)
+    0b0111_0000: VIFCode(
+        code=0x70,
+        coef=1,
+        desc=VIFCodeDescription.averaging_duration,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0111_0001: VIFCode(
+        code=0x71,
+        coef=60,
+        desc=VIFCodeDescription.averaging_duration,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0111_0010: VIFCode(
+        code=0x72,
+        coef=3600,
+        desc=VIFCodeDescription.averaging_duration,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0111_0011: VIFCode(
+        code=0x73,
+        coef=86400,
+        desc=VIFCodeDescription.averaging_duration,
+        unit=VIFCodeUnit.second,
+    ),
+    # E111_01nn - Actuality duration (in seconds)
+    0b0111_0100: VIFCode(
+        code=0x74,
+        coef=1,
+        desc=VIFCodeDescription.actuality_duration,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0111_0101: VIFCode(
+        code=0x75,
+        coef=60,
+        desc=VIFCodeDescription.actuality_duration,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0111_0110: VIFCode(
+        code=0x76,
+        coef=3600,
+        desc=VIFCodeDescription.actuality_duration,
+        unit=VIFCodeUnit.second,
+    ),
+    0b0111_0111: VIFCode(
+        code=0x77,
+        coef=86400,
+        desc=VIFCodeDescription.actuality_duration,
+        unit=VIFCodeUnit.second,
+    ),
     # E111_1000
-    0b0111_1000: FabricationNoVIFCode,
+    0b0111_1000: VIFCode(code=0x78, desc=VIFCodeDescription.fabrication_no),
     # E111_1001
-    0b0111_1001: EnhancedIdentificationVIFCode,
+    0b0111_1001: VIFCode(code=0x79, desc=VIFCodeDescription.enhanced),
     # E111_1010
-    0b0111_1010: BusAddressVIFCode,
+    0b0111_1010: VIFCode(code=0x7A, desc=VIFCodeDescription.bus_address),
     # special purpose VIF codes
-    0b0111_1100: UserDefinedVIFCode,
-    0b0111_1110: AnyVIFCode,
-    0b0111_1111: ManufacturerSpecificVIFCode,
+    0b0111_1100: VIFCode(code=0x7C, desc=VIFCodeDescription.user),
+    0b0111_1110: VIFCode(code=0x7E, desc=VIFCodeDescription.any),
+    0b0111_1111: VIFCode(code=0x7F, desc=VIFCodeDescription.manufacturer),
+    # special purpose VIF codes
+    0b1111_1011: VIFCode(code=0xFB, desc=VIFCodeDescription.extension),
+    0b1111_1101: VIFCode(code=0xFD, desc=VIFCodeDescription.extension),
 }
 
 
@@ -478,15 +829,17 @@ def get_vif_code(byte: int | VIF) -> None | VIFCode:  # noqa: C901
     byte : int | VIF
         either an integer or VIF class
 
+    Raises
+    ------
+    MBusValidationError
+        if byte is not within the byte range
+
     Returns
     -------
     None | VIFCode
     """
 
-    byte = int(byte)  # ensure int
-    vif = VIF(byte)  # validate byte range
+    # validate byte -> ensure VIF
+    byte = int(VIF(int(byte)))
 
-    vif_code_type = _VIF_CODE_MAP.get(byte)
-    if vif_code_type is not None:
-        return vif_code_type(vif)
-    return None
+    return _VIF_CODE_MAP.get(byte)

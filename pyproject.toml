@@ -165,9 +165,11 @@ fixable = ["I", "ICN", "ISC"]
 "{src,tests}/*.py" = [
     "N817",  # https://docs.astral.sh/ruff/rules/camelcase-imported-as-acronym/
 ]
+"src/pymbus/codes/vif.py" = ["ERA001"]
 "tests/*.py" = [
     "ANN201",  # https://docs.astral.sh/ruff/rules/missing-return-type-undocumented-public-function/
     "D",
+    "ERA",
     "FBT001",  # https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
     "PT011",  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
     "S",
