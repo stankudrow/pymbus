@@ -35,13 +35,11 @@ class DataRecordHeader(TelegramContainer):
     @property
     def dib(self) -> DIB:
         """Return DI block."""
-
         return self._dib
 
     @property
     def vib(self) -> VIB:
         """Return VI block."""
-
         return self._vib
 
 
@@ -71,11 +69,9 @@ class DataRecord(TelegramContainer):
     @property
     def drh(self) -> DataRecordHeader:
         """Return DataRecordHeader."""
-
         return self._drh
 
     @property
     def data(self) -> TelegramContainer:
         """Return data fields."""
-
         return self._data

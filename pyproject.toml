@@ -157,9 +157,10 @@ select = [
 ]
 ignore = [
     "ANN401",  # https://docs.astral.sh/ruff/rules/any-type/
+    "D105",  # https://docs.astral.sh/ruff/rules/undocumented-magic-method/
     "ISC001",  # https://docs.astral.sh/ruff/rules/single-line-implicit-string-concatenation/
 ]
-fixable = ["I", "ICN", "ISC"]
+fixable = ["I", "ICN", "ISC", "D202"]
 
 [tool.ruff.lint.per-file-ignores]
 "{src,tests}/*.py" = [

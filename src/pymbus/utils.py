@@ -22,7 +22,6 @@ def validate_byte(number: int) -> int:
     -------
     int
     """
-
     if -1 < number < 256:
         return number
 

@@ -838,7 +838,6 @@ def get_vif_code(byte: int | VIF) -> None | VIFCode:  # noqa: C901
     -------
     None | VIFCode
     """
-
     # validate byte -> ensure VIF
     byte = int(VIF(int(byte)))
 
