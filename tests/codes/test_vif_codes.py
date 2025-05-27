@@ -3,6 +3,7 @@ from typing import cast
 import pytest
 
 from pymbus.codes.vif import (
+    AnyVIFCode,
     BusAddressVIFCode,
     DurationActualityVIFCode,
     DurationAveragingVIFCode,
@@ -11,11 +12,11 @@ from pymbus.codes.vif import (
     EnhancedIdentificationVIFCode,
     FabricationNoVIFCode,
     HeatCostAllocatorUnitsVIFCode,
+    ManufacturerSpecificVIFCode,
     MassFlowKilogramPerHourVIFCode,
     MassKilogramVIFCode,
     OnTimeVIFCode,
     OperatingTimeVIFCode,
-    PhysicalUnitVIFCode,
     PowerJoulePerHourVIFCode,
     PowerWattVIFCode,
     PressureBarVIFCode,
@@ -26,6 +27,7 @@ from pymbus.codes.vif import (
     TemperatureReturnCelsiusVIFCode,
     TimePartVIFCode,
     TimePointVIFCode,
+    UserDefinedVIFCode,
     VolumeFlowMeterCubicPerHourVIFCode,
     VolumeFlowMeterCubicPerMinuteVIFCode,
     VolumeFlowMeterCubicPerSecondVIFCode,
@@ -35,46 +37,49 @@ from pymbus.codes.vif import (
 from pymbus.codes.vif import (
     VIFCode as VIFC,
 )
+from pymbus.exceptions import MBusValidationError
 from pymbus.telegrams.fields import ValueInformationField as VIF
 
 
-def _assert_vif_code(vif: VIF, code_type: type[VIFC]) -> VIFC:
+def _assert_vif_code(
+    vif: VIF, code_type: type[VIFC], *, coef: float = 1
+) -> VIFC:
     code = get_vif_code(vif)
     if code is None:
         msg = f"no match for {vif}"
         raise ValueError(msg)
     assert isinstance(code, code_type)
-    return code
 
-
-def _assert_physical_vif_code(
-    vif: VIF, code_type: type[PhysicalUnitVIFCode], multiplier: float = 1
-) -> PhysicalUnitVIFCode:
-    code = cast("PhysicalUnitVIFCode", _assert_vif_code(vif, code_type))
-    assert code.multiplier == multiplier
+    assert code.coef == coef
     return code
 
 
 def _assert_time_vif_code(
-    vif: VIF, code_type: type[PhysicalUnitVIFCode], multiplier: float = 1
+    vif: VIF, vif_code: TimePartVIFCode
 ) -> TimePartVIFCode:
-    tcode = cast(
-        "TimePartVIFCode", _assert_physical_vif_code(vif, code_type, multiplier)
-    )
     match vif & 0x03:
         case 0:
-            assert tcode.is_second()
+            assert vif_code.is_second()
         case 1:
-            assert tcode.is_minute()
+            assert vif_code.is_minute()
         case 2:
-            assert tcode.is_hour()
+            assert vif_code.is_hour()
         case 3:
-            assert tcode.is_day()
-    return tcode
+            assert vif_code.is_day()
+    return vif_code
+
+
+def test_bad_nonbyte_value():
+    with pytest.raises(MBusValidationError):
+        get_vif_code(266)
+
+
+def test_no_vif_code():
+    assert get_vif_code(VIF(0b0111_1011)) is None
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0000_0000), 1e-3),
         (VIF(0b0000_0001), 1e-2),
@@ -86,12 +91,12 @@ def _assert_time_vif_code(
         (VIF(0b0000_0111), 1e4),
     ],
 )
-def test_energy_watt_hour_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, EnergyWattHourVIFCode, multiplier)
+def test_energy_watt_hour_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, EnergyWattHourVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0000_1000), 1e0),
         (VIF(0b0000_1001), 1e1),
@@ -103,12 +108,12 @@ def test_energy_watt_hour_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0000_1111), 1e7),
     ],
 )
-def test_energy_joule_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, EnergyJouleVIFCode, multiplier)
+def test_energy_joule_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, EnergyJouleVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0001_0000), 1e-6),
         (VIF(0b0001_0001), 1e-5),
@@ -120,12 +125,12 @@ def test_energy_joule_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0001_0111), 1e1),
     ],
 )
-def test_volume_meter_cubic_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, VolumeMeterCubicVIFCode, multiplier)
+def test_volume_meter_cubic_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, VolumeMeterCubicVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0001_1000), 1e-3),
         (VIF(0b0001_1001), 1e-2),
@@ -137,8 +142,8 @@ def test_volume_meter_cubic_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0001_1111), 1e4),
     ],
 )
-def test_mass_kilogram_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, MassKilogramVIFCode, multiplier)
+def test_mass_kilogram_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, MassKilogramVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
@@ -146,7 +151,10 @@ def test_mass_kilogram_vif_codes(vif: VIF, multiplier: float):
     [VIF(0b0010_0000), VIF(0b0010_0001), VIF(0b0010_0010), VIF(0b0010_0011)],
 )
 def test_on_time_vif_codes(vif: VIF):
-    _assert_time_vif_code(vif, OnTimeVIFCode, 1)
+    tcode = cast(
+        "TimePartVIFCode", _assert_vif_code(vif, OnTimeVIFCode, coef=1)
+    )
+    _assert_time_vif_code(vif, tcode)
 
 
 @pytest.mark.parametrize(
@@ -154,11 +162,14 @@ def test_on_time_vif_codes(vif: VIF):
     [VIF(0b0010_0100), VIF(0b0010_0101), VIF(0b0010_0110), VIF(0b0010_0111)],
 )
 def test_operating_time_vif_codes(vif: VIF):
-    _assert_time_vif_code(vif, OperatingTimeVIFCode, 1)
+    tcode = cast(
+        "TimePartVIFCode", _assert_vif_code(vif, OperatingTimeVIFCode, coef=1)
+    )
+    _assert_time_vif_code(vif, tcode)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0010_1000), 1e-3),
         (VIF(0b0010_1001), 1e-2),
@@ -170,12 +181,12 @@ def test_operating_time_vif_codes(vif: VIF):
         (VIF(0b0010_1111), 1e4),
     ],
 )
-def test_power_watt_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, PowerWattVIFCode, multiplier)
+def test_power_watt_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, PowerWattVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0011_0000), 1e0),
         (VIF(0b0011_0001), 1e1),
@@ -187,12 +198,12 @@ def test_power_watt_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0011_0111), 1e7),
     ],
 )
-def test_power_joule_per_hour_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, PowerJoulePerHourVIFCode, multiplier)
+def test_power_joule_per_hour_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, PowerJoulePerHourVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0011_1000), 1e-6),
         (VIF(0b0011_1001), 1e-5),
@@ -204,16 +215,12 @@ def test_power_joule_per_hour_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0011_1111), 1e1),
     ],
 )
-def test_volume_flow_meter_cubic_per_hour_vif_codes(
-    vif: VIF, multiplier: float
-):
-    _assert_physical_vif_code(
-        vif, VolumeFlowMeterCubicPerHourVIFCode, multiplier
-    )
+def test_volume_flow_meter_cubic_per_hour_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, VolumeFlowMeterCubicPerHourVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0100_0000), 1e-7),
         (VIF(0b0100_0001), 1e-6),
@@ -225,16 +232,12 @@ def test_volume_flow_meter_cubic_per_hour_vif_codes(
         (VIF(0b0100_0111), 1e0),
     ],
 )
-def test_volume_flow_meter_cubic_per_minute_vif_codes(
-    vif: VIF, multiplier: float
-):
-    _assert_physical_vif_code(
-        vif, VolumeFlowMeterCubicPerMinuteVIFCode, multiplier
-    )
+def test_volume_flow_meter_cubic_per_minute_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, VolumeFlowMeterCubicPerMinuteVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0100_1000), 1e-9),
         (VIF(0b0100_1001), 1e-8),
@@ -246,16 +249,12 @@ def test_volume_flow_meter_cubic_per_minute_vif_codes(
         (VIF(0b0100_1111), 1e-2),
     ],
 )
-def test_volume_flow_meter_cubic_per_second_vif_codes(
-    vif: VIF, multiplier: float
-):
-    _assert_physical_vif_code(
-        vif, VolumeFlowMeterCubicPerSecondVIFCode, multiplier
-    )
+def test_volume_flow_meter_cubic_per_second_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, VolumeFlowMeterCubicPerSecondVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0101_0000), 1e-3),
         (VIF(0b0101_0001), 1e-2),
@@ -267,12 +266,12 @@ def test_volume_flow_meter_cubic_per_second_vif_codes(
         (VIF(0b0101_0111), 1e4),
     ],
 )
-def test_mass_flow_kilogram_per_hour_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, MassFlowKilogramPerHourVIFCode, multiplier)
+def test_mass_flow_kilogram_per_hour_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, MassFlowKilogramPerHourVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0101_1000), 1e-3),
         (VIF(0b0101_1001), 1e-2),
@@ -280,12 +279,12 @@ def test_mass_flow_kilogram_per_hour_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0101_1011), 1e0),
     ],
 )
-def test_temperature_flow_celsius_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, TemperatureFlowCelsiusVIFCode, multiplier)
+def test_temperature_flow_celsius_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, TemperatureFlowCelsiusVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0101_1100), 1e-3),
         (VIF(0b0101_1101), 1e-2),
@@ -293,12 +292,12 @@ def test_temperature_flow_celsius_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0101_1111), 1e0),
     ],
 )
-def test_temperature_return_celsius_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, TemperatureReturnCelsiusVIFCode, multiplier)
+def test_temperature_return_celsius_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, TemperatureReturnCelsiusVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0110_0000), 1e-3),
         (VIF(0b0110_0001), 1e-2),
@@ -306,14 +305,12 @@ def test_temperature_return_celsius_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0110_0011), 1e-0),
     ],
 )
-def test_temperature_difference_kelvin_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(
-        vif, TemperatureDifferenceKelvinVIFCode, multiplier
-    )
+def test_temperature_difference_kelvin_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, TemperatureDifferenceKelvinVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0110_0100), 1e-3),
         (VIF(0b0110_0101), 1e-2),
@@ -321,14 +318,12 @@ def test_temperature_difference_kelvin_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0110_0111), 1e-0),
     ],
 )
-def test_temperature_external_celsius_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(
-        vif, TemperatureExternalCelsiusVIFCode, multiplier
-    )
+def test_temperature_external_celsius_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, TemperatureExternalCelsiusVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
-    ("vif", "multiplier"),
+    ("vif", "coef"),
     [
         (VIF(0b0110_1000), 1e-3),
         (VIF(0b0110_1001), 1e-2),
@@ -336,8 +331,8 @@ def test_temperature_external_celsius_vif_codes(vif: VIF, multiplier: float):
         (VIF(0b0110_1011), 1e0),
     ],
 )
-def test_pressure_bar_vif_codes(vif: VIF, multiplier: float):
-    _assert_physical_vif_code(vif, PressureBarVIFCode, multiplier)
+def test_pressure_bar_vif_codes(vif: VIF, coef: float):
+    _assert_vif_code(vif, PressureBarVIFCode, coef=coef)
 
 
 @pytest.mark.parametrize(
@@ -346,7 +341,7 @@ def test_pressure_bar_vif_codes(vif: VIF, multiplier: float):
 )
 def test_time_point_vif_codes(vif: VIF):
     code = cast(
-        "TimePointVIFCode", _assert_physical_vif_code(vif, TimePointVIFCode, 1)
+        "TimePointVIFCode", _assert_vif_code(vif, TimePointVIFCode, coef=1)
     )
     match vif & 0x01:
         case 0:
@@ -356,13 +351,11 @@ def test_time_point_vif_codes(vif: VIF):
 
 
 def test_hca_units_vif_code():
-    _assert_physical_vif_code(
-        VIF(0b0110_1110), HeatCostAllocatorUnitsVIFCode, 1
-    )
+    _assert_vif_code(VIF(0b0110_1110), HeatCostAllocatorUnitsVIFCode, coef=1)
 
 
 def test_reserved_e110_1111_vif_code():
-    _assert_vif_code(VIF(0b0110_1111), ReservedVIFCode)
+    _assert_vif_code(VIF(0b0110_1111), ReservedVIFCode, coef=1)
 
 
 @pytest.mark.parametrize(
@@ -370,7 +363,7 @@ def test_reserved_e110_1111_vif_code():
     [VIF(0b0111_0000), VIF(0b0111_0001), VIF(0b0111_0010), VIF(0b0111_0011)],
 )
 def test_averaging_duration_vif_codes(vif: VIF):
-    _assert_physical_vif_code(vif, DurationAveragingVIFCode, 1)
+    _assert_vif_code(vif, DurationAveragingVIFCode, coef=1)
 
 
 @pytest.mark.parametrize(
@@ -378,16 +371,22 @@ def test_averaging_duration_vif_codes(vif: VIF):
     [VIF(0b0111_0100), VIF(0b0111_0101), VIF(0b0111_0110), VIF(0b0111_0111)],
 )
 def test_actuality_duration_vif_codes(vif: VIF):
-    _assert_physical_vif_code(vif, DurationActualityVIFCode, 1)
+    _assert_vif_code(vif, DurationActualityVIFCode, coef=1)
 
 
 def test_fabriaction_no_vif_code():
-    _assert_vif_code(VIF(0b0111_1000), FabricationNoVIFCode)
+    _assert_vif_code(VIF(0b0111_1000), FabricationNoVIFCode, coef=1)
 
 
 def test_enhanced_identification_vif_code():
-    _assert_vif_code(VIF(0b0111_1001), EnhancedIdentificationVIFCode)
+    _assert_vif_code(VIF(0b0111_1001), EnhancedIdentificationVIFCode, coef=1)
 
 
 def test_bus_address_vif_code():
-    _assert_vif_code(VIF(0b0111_1010), BusAddressVIFCode)
+    _assert_vif_code(VIF(0b0111_1010), BusAddressVIFCode, coef=1)
+
+
+def test_special_purpose_vif_codes():
+    _assert_vif_code(VIF(0b0111_1100), UserDefinedVIFCode, coef=1)
+    _assert_vif_code(VIF(0b0111_1110), AnyVIFCode, coef=1)
+    _assert_vif_code(VIF(0b0111_1111), ManufacturerSpecificVIFCode, coef=1)
