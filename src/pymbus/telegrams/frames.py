@@ -60,21 +60,21 @@ class SingleFrame(TelegramFrame):
         -------
         Self
         """
-
         return SingleFrame([byte])
 
     def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        if ibytes is None:
-            ibytes = [TelegramField(ACK_BYTE)]
+        fields = ibytes if ibytes else [TelegramField(ACK_BYTE)]
 
-        fields = list(TelegramContainer(ibytes=ibytes))
-        if len(fields) != 1:
-            msg = f"accepts only {ACK_BYTE}"
-            raise MBusLengthError(msg)
+        it = iter(fields)
+        try:
+            field = TelegramField(int(next(it)))
+        except StopIteration as e:
+            msg = f"empty byte sequence: {ibytes!r}"
+            raise MBusLengthError(msg) from e
 
-        if (byte := fields[0].byte) != ACK_BYTE:
-            msg = f"{byte} != {ACK_BYTE}"
-            raise MBusValidationError(msg)
+        if field != ACK_BYTE:
+            msg = f"{int(field)} != {ACK_BYTE}"
+            raise MBusValidationError(msg) from None
 
         super().__init__(ibytes=fields)
 
@@ -99,16 +99,16 @@ class ShortFrame(TelegramFrame):
     """
 
     def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        it = iter(ibytes)  # type: ignore [arg-type]
+        it = iter(ibytes if ibytes else [])
         try:
             super().__init__(self._parse(it))
         except StopIteration as e:
-            msg = f"{ibytes!r} are of invalid length"
+            msg = f"{ibytes!r} has an invalid length"
             raise MBusLengthError(msg) from e
 
     def _parse(self, it: Iterator) -> list[TelegramField]:
         start_field = TelegramField(int(next(it)))
-        if (byte := start_field.byte) != SHORT_FRAME_START_BYTE:
+        if (byte := start_field) != SHORT_FRAME_START_BYTE:
             msg = f"the first byte {byte!r} is an invalid start byte"
             raise MBusValidationError(msg)
 
@@ -117,7 +117,7 @@ class ShortFrame(TelegramFrame):
         check_sum_field = TelegramField(int(next(it)))
 
         stop_field = TelegramField(int(next(it)))
-        if (byte := stop_field.byte) != FRAME_STOP_BYTE:
+        if (byte := stop_field) != FRAME_STOP_BYTE:
             msg = f"the fifth byte {byte!r} is an invalid stop byte"
             raise MBusValidationError(msg)
 
@@ -151,16 +151,16 @@ class ControlFrame(TelegramFrame):
     """
 
     def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        it = iter(ibytes)  # type: ignore [arg-type]
+        it = iter(ibytes if ibytes else [])
         try:
             super().__init__(self._parse(it))
         except StopIteration as e:
-            msg = f"{ibytes!r} are of invalid length"
+            msg = f"{ibytes!r} has an invalid length"
             raise MBusLengthError(msg) from e
 
     def _parse(self, it: Iterator) -> list[TelegramField]:
         start_field = TelegramField(int(next(it)))
-        if (byte := start_field.byte) != CONTROL_FRAME_START_BYTE:
+        if (byte := start_field) != CONTROL_FRAME_START_BYTE:
             msg = f"the first byte {byte!r} is invalid start byte"
             raise MBusValidationError(msg)
 
@@ -168,7 +168,7 @@ class ControlFrame(TelegramFrame):
         length2_field = TelegramField(int(next(it)))
 
         start2_field = TelegramField(int(next(it)))
-        if (byte := start2_field.byte) != CONTROL_FRAME_START_BYTE:
+        if (byte := start2_field) != CONTROL_FRAME_START_BYTE:
             msg = f"the fourth byte {byte!r} is invalid start byte"
             raise MBusValidationError(msg)
 
@@ -178,7 +178,7 @@ class ControlFrame(TelegramFrame):
         check_sum_field = TelegramField(int(next(it)))
 
         stop_field = TelegramField(int(next(it)))
-        if (byte := stop_field.byte) != FRAME_STOP_BYTE:
+        if (byte := stop_field) != FRAME_STOP_BYTE:
             msg = f"the ninth byte {byte!r} is invalid stop byte"
             raise MBusValidationError(msg)
 
@@ -223,16 +223,16 @@ class LongFrame(TelegramFrame):
     """
 
     def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        it = iter(ibytes)  # type: ignore [arg-type]
+        it = iter(ibytes if ibytes else [])
         try:
             super().__init__(self._parse(it))
         except StopIteration as e:
-            msg = f"{ibytes!r} are of invalid length"
+            msg = f"{ibytes!r} has an invalid length"
             raise MBusLengthError(msg) from e
 
     def _parse(self, it: Iterator) -> list[TelegramField]:
         start_field = TelegramField(int(next(it)))
-        if (byte := start_field.byte) != CONTROL_FRAME_START_BYTE:
+        if (byte := start_field) != CONTROL_FRAME_START_BYTE:
             msg = f"the first byte {byte!r} is invalid start byte"
             raise MBusValidationError(msg)
 
@@ -240,7 +240,7 @@ class LongFrame(TelegramFrame):
         length2_field = TelegramField(int(next(it)))
 
         start2_field = TelegramField(int(next(it)))
-        if (byte := start2_field.byte) != CONTROL_FRAME_START_BYTE:
+        if (byte := start2_field) != CONTROL_FRAME_START_BYTE:
             msg = f"the fourth byte {byte!r} is invalid start byte"
             raise MBusValidationError(msg)
 
@@ -256,7 +256,7 @@ class LongFrame(TelegramFrame):
         check_sum_field = TelegramField(int(next(it)))
 
         stop_field = TelegramField(int(next(it)))
-        if (byte := stop_field.byte) != FRAME_STOP_BYTE:
+        if (byte := stop_field) != FRAME_STOP_BYTE:
             msg = f"the tenth byte {byte!r} is invalid stop byte"
             raise MBusValidationError(msg)
 

@@ -58,7 +58,7 @@ class TestDataRecordHeader:
         fields = [field for block in blocks for field in block]
         nfields = len(fields)
 
-        assert dr.as_bytes() == data[:nfields]
+        assert bytes(map(int, dr)) == data[:nfields]
         assert blocks == answer
         assert list(gen) == list(map(int, data[nfields:]))
 
@@ -88,4 +88,4 @@ class TestDataRecord:
             dr = DR(it)
 
             assert dr.drh == drh
-            assert dr.data.as_ints() == data
+            assert list(map(int, dr.data)) == data

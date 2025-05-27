@@ -1,14 +1,15 @@
+from collections.abc import Iterable
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
+from operator import and_, or_, xor
+from typing import Any
 
 import pytest
 
-from pymbus.exceptions import MBusError
+from pymbus.exceptions import MBusValidationError
 from pymbus.telegrams.base import (
-    TelegramBytesType,
     TelegramContainer,
     TelegramField,
-    extract_bytes,
 )
 
 
@@ -16,36 +17,32 @@ class TestTelegramField:
     @pytest.mark.parametrize(
         ("nbr", "expectation"),
         [
-            (-1, pytest.raises(MBusError)),
+            (-1, pytest.raises(MBusValidationError)),
             (0, does_not_raise()),
             (128, does_not_raise()),
             (255, does_not_raise()),
-            (256, pytest.raises(MBusError)),
+            (256, pytest.raises(MBusValidationError)),
         ],
     )
     def test_init(self, nbr: int, expectation: AbstractContextManager):
         with expectation:
             TelegramField(nbr)
 
-    def test_equality(self):
-        nbr = 5
-        tf = TelegramField(nbr)
+    def test_is_int(self):
+        assert isinstance(TelegramField(4), int)
 
-        assert tf == TelegramField(nbr)
-        assert tf == nbr
-        assert tf != "5"
+    def test_comparison_ops(self):
+        nbr = 21
+        tf = TelegramField(nbr + 1)
 
-        non_nbr = nbr + 1
-        assert tf != TelegramField(non_nbr)
-        assert tf != non_nbr
+        assert TelegramField(nbr) == nbr
+        assert tf != nbr
+        assert tf > nbr
+        assert tf >= nbr
+        assert nbr < tf
+        assert nbr <= tf
 
-    def test_byte_property(self):
-        nbr = 128
-        tf = TelegramField(nbr)
-
-        assert tf.byte == nbr
-
-    def test_int_conversion(self):
+    def test_to_int(self):
         nbr = 21
 
         result = int(TelegramField(nbr))
@@ -53,16 +50,61 @@ class TestTelegramField:
         assert isinstance(result, int)
         assert result == nbr
 
+    def test_bitwise_ops(self):
+        nbr = 42
+        tf = TelegramField(nbr)
+
+        for op in (and_, or_, xor):
+            assert op(tf, 21) == op(nbr, 21)
+
+        assert ~tf == ~nbr
+
+        assert (tf << 2) == (nbr << 2)
+        assert (tf >> 1) == (nbr >> 1)
+
+    def test_repr(self):
+        tf = TelegramField(255)
+        assert repr(tf) == "TelegramField(255)"
+
 
 class TestTelegramContainer:
-    def test_init_from(self):
-        hexstr = "00 FF"
-        ints = [0, 255]
+    @pytest.mark.parametrize(
+        ("hexstr", "answer", "expectation"),
+        [
+            ("", [], does_not_raise()),
+            ("00 80 FF", [0, 128, 255], does_not_raise()),
+            ("XY", None, pytest.raises(MBusValidationError)),
+        ],
+    )
+    def test_from_hexstring(
+        self,
+        hexstr: str,
+        answer: None | Iterable[int],
+        expectation: AbstractContextManager,
+    ):
+        with expectation:
+            tc = TelegramContainer.from_hexstring(hexstr)
+            assert tc == answer
 
-        tf1 = TelegramContainer.from_hexstring(hexstr)
-        tf2 = TelegramContainer.from_integers(ints)
+    def test_init(self):
+        ctx = does_not_raise()
+        nums = [0, 128, 255]
 
-        assert tf1 == tf2
+        with ctx:
+            assert TelegramContainer(bytes(nums))
+        with ctx:
+            assert TelegramContainer(bytearray(nums))
+        with ctx:
+            assert TelegramContainer(nums)
+        with ctx:
+            assert TelegramContainer(TelegramField(num) for num in nums)
+
+    @pytest.mark.parametrize(
+        ("it", "value", "answer"),
+        [([], 0, False), ([1], 1, True), ([2], 3, False), ([4, 5], 5, True)],
+    )
+    def test_contains(self, it: Iterable, value: Any, answer: bool):
+        assert (value in TelegramContainer(it)) == answer
 
     @pytest.mark.parametrize(
         ("container", "key", "answer"),
@@ -94,26 +136,59 @@ class TestTelegramContainer:
     ):
         assert container[key] == answer
 
-    def test_as_bytes(self):
-        tc = TelegramContainer.from_integers([0, 12, 23, 66])
+    def test_comparison_ops(self):
+        assert TelegramContainer([2, 1]) == [2, 1]
+        assert TelegramContainer([2, 1]) != [1, 2]
+        assert TelegramContainer([1, 2]) < [2, 1]
+        assert TelegramContainer([1, 2]) <= [2, 1]
+        assert TelegramContainer([2, 1]) > [1]
+        assert TelegramContainer([2, 1]) >= [1]
 
-        bytez = bytes(tf.byte for tf in tc)
+    @pytest.mark.parametrize("it", [[], [1], [3, 2]])
+    def test_reversed(self, it: list[int]):
+        tc = TelegramContainer(it)
 
-        assert tc.as_bytes() == bytez
+        assert tuple(reversed(tc)) == tuple(reversed(it))
 
-    def test_as_ints(self):
-        ints = [0, 1, 2]
+    @pytest.mark.parametrize(
+        ("it", "value", "start", "stop", "expectation"),
+        [
+            ([], 0, 0, 0, pytest.raises(ValueError)),
+            ([1, 2], 2, 0, 2, does_not_raise()),
+            ([1, 2], 2, 1, 2, does_not_raise()),
+            ([1, 2], 2, 0, 1, pytest.raises(ValueError)),
+            ([1, 2], 1, 1, 2, pytest.raises(ValueError)),
+        ],
+    )
+    def test_index(
+        self,
+        it: Iterable,
+        value: Any,
+        *,
+        start: int,
+        stop: int,
+        expectation: AbstractContextManager,
+    ):
+        res, ans = None, None
+        seq = list(it)
 
-        tc = TelegramContainer(ints)
+        with expectation:
+            res = TelegramContainer(seq).index(value, start, stop)
 
-        assert tc.as_ints() == ints
+        with expectation:
+            ans = seq.index(value, start, stop)
 
+        assert res == ans
 
-@pytest.mark.parametrize(
-    ("it", "answer"),
-    [([], []), ([0, TelegramField(byte=42), 0b1111_1111], [0, 42, 255])],
-)
-def test_extract_bytes(it: TelegramBytesType, answer: list[int]) -> None:
-    bytez = extract_bytes(it)
-
-    assert bytez == answer
+    @pytest.mark.parametrize(
+        ("it", "value", "answer"),
+        [
+            ([], 0, 0),
+            ([1], 0, 0),
+            ([2, 3], 2, 1),
+            ([1, 2, 1, 3], 1, 2),
+            ([3, 4, 1], 1, 1),
+        ],
+    )
+    def test_count(self, it: Iterable, value: Any, answer: Any):
+        assert TelegramContainer(it).count(value) == answer

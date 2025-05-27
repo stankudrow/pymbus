@@ -3,16 +3,7 @@ from contextlib import nullcontext as does_not_raise
 
 import pytest
 
-from pymbus.telegrams.fields import (
-    AF_BROADCAST_ALL_SLAVES_REPLY_BYTE,
-    AF_BROADCAST_NO_SLAVE_REPLIES_BYTE,
-    AF_NETWORK_LAYER_BYTE,
-    AF_SLAVE_MAX_RANGE_VALUE_BYTE,
-    AF_SLAVE_MIN_RANGE_VALUE_BYTE,
-    AF_UNCONFIGURED_SLAVE_BYTE,
-    AddressField,
-    ControlField,
-)
+from pymbus.telegrams.fields import AddressField, ControlField
 from pymbus.telegrams.fields import (
     DataInformationField as DIF,
 )
@@ -29,19 +20,14 @@ from pymbus.telegrams.fields import (
 
 class TestAddressField:
     def test_is_unconfigured_slave(self):
-        af = AddressField(AF_UNCONFIGURED_SLAVE_BYTE)
+        af = AddressField(0)
 
         assert af.is_unconfigured_slave()
         assert not af.is_configured_slave()
 
     @pytest.mark.parametrize(
         "byte",
-        [
-            AF_SLAVE_MIN_RANGE_VALUE_BYTE,
-            AF_SLAVE_MIN_RANGE_VALUE_BYTE + 1,
-            AF_SLAVE_MAX_RANGE_VALUE_BYTE - 1,
-            AF_SLAVE_MAX_RANGE_VALUE_BYTE,
-        ],
+        [1, 2, 249, 250],
     )
     def test_is_configured_slave(self, byte: int):
         af = AddressField(byte)
@@ -52,11 +38,11 @@ class TestAddressField:
     @pytest.mark.parametrize(
         "byte",
         [
-            AF_UNCONFIGURED_SLAVE_BYTE,
-            AF_SLAVE_MIN_RANGE_VALUE_BYTE,
-            AF_SLAVE_MIN_RANGE_VALUE_BYTE + 1,
-            AF_SLAVE_MAX_RANGE_VALUE_BYTE - 1,
-            AF_SLAVE_MAX_RANGE_VALUE_BYTE,
+            0,
+            1,
+            2,
+            249,
+            250,
         ],
     )
     def test_is_slave(self, byte: int):
@@ -67,9 +53,9 @@ class TestAddressField:
     @pytest.mark.parametrize(
         ("byte", "answer"),
         [
-            (AF_BROADCAST_ALL_SLAVES_REPLY_BYTE, True),
-            (AF_BROADCAST_NO_SLAVE_REPLIES_BYTE, True),
-            (AF_NETWORK_LAYER_BYTE, False),
+            (254, True),
+            (255, True),
+            (253, False),
         ],
     )
     def test_is_broadcast(self, byte: int, answer: bool):
@@ -78,7 +64,7 @@ class TestAddressField:
         assert af.is_broadcast() == answer
 
     def test_is_network_layer(self):
-        af = AddressField(AF_NETWORK_LAYER_BYTE)
+        af = AddressField(253)
 
         assert not af.is_broadcast()
         assert not af.is_slave()
@@ -187,7 +173,7 @@ class TestDIF:
         ],
     )
     def test_dif_extension_bit(self, byte: int, ext_bit: int):
-        dif = DIF(byte=byte)
+        dif = DIF(byte)
 
         assert dif.extension == ext_bit
 
@@ -199,7 +185,7 @@ class TestDIF:
         ],
     )
     def test_dif_storage_number_lsb(self, byte: int, sn_lsb: int):
-        dif = DIF(byte=byte)
+        dif = DIF(byte)
 
         assert dif.storage_number_lsb == sn_lsb
 
@@ -213,7 +199,7 @@ class TestDIF:
         ],
     )
     def test_dif_function_field(self, byte: int, function_field: int):
-        dif = DIF(byte=byte)
+        dif = DIF(byte)
 
         assert dif.function == function_field
 
@@ -227,7 +213,7 @@ class TestDIF:
         ],
     )
     def test_dif_data_field(self, byte: int, data_field: int):
-        dif = DIF(byte=byte)
+        dif = DIF(byte)
 
         assert dif.data == data_field
 
@@ -241,7 +227,7 @@ class TestDIFE:
         ],
     )
     def test_dife_extension_bit(self, byte: int, ext_bit: int):
-        dif = DIFE(byte=byte)
+        dif = DIFE(byte)
 
         assert dif.extension == ext_bit
 
@@ -253,7 +239,7 @@ class TestDIFE:
         ],
     )
     def test_dife_storage_number_lsb(self, byte: int, device_unit: int):
-        dif = DIFE(byte=byte)
+        dif = DIFE(byte)
 
         assert dif.device_unit == device_unit
 
@@ -267,7 +253,7 @@ class TestDIFE:
         ],
     )
     def test_dife_tariff(self, byte: int, tariff: int):
-        dif = DIFE(byte=byte)
+        dif = DIFE(byte)
 
         assert dif.tariff == tariff
 
@@ -281,7 +267,7 @@ class TestDIFE:
         ],
     )
     def test_dife_storage_number(self, byte: int, storage_number: int):
-        dif = DIFE(byte=byte)
+        dif = DIFE(byte)
 
         assert dif.storage_number == storage_number
 
@@ -295,7 +281,7 @@ class TestVIF:
         ],
     )
     def test_vif_extension_bit(self, byte: int, ext_bit: int):
-        vif = VIF(byte=byte)
+        vif = VIF(byte)
 
         assert vif.extension == ext_bit
 
@@ -307,7 +293,7 @@ class TestVIF:
         ],
     )
     def test_vif_unit(self, byte: int, unit: int):
-        vif = VIF(byte=byte)
+        vif = VIF(byte)
 
         assert vif.unit == unit
 
@@ -321,7 +307,7 @@ class TestVIFE:
         ],
     )
     def test_vife_extension_bit(self, byte: int, ext_bit: int):
-        vife = VIFE(byte=byte)
+        vife = VIFE(byte)
 
         assert vife.extension == ext_bit
 
@@ -333,6 +319,6 @@ class TestVIFE:
         ],
     )
     def test_vife_unit(self, byte: int, unit: int):
-        vife = VIFE(byte=byte)
+        vife = VIFE(byte)
 
         assert vife.unit == unit

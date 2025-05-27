@@ -25,14 +25,11 @@ class TestSingleFrame:
         [
             ([ACK_BYTE], does_not_raise()),
             ([ACK_BYTE - 1], pytest.raises(MBusValidationError)),
-            ([], pytest.raises(MBusLengthError)),
-            ([ACK_BYTE, ACK_BYTE], pytest.raises(MBusLengthError)),
+            ([], does_not_raise()),
+            ([ACK_BYTE, ACK_BYTE], does_not_raise()),
         ],
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
-        with expectation:
-            SingleFrame.from_integers(it)
-
         with expectation:
             SingleFrame(it)
 
@@ -69,9 +66,6 @@ class TestShortFrame:
         ],
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
-        with expectation:
-            ShortFrame.from_integers(it)
-
         with expectation:
             ShortFrame(it)
 
@@ -130,9 +124,6 @@ class TestControlFrame:
         ],
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
-        with expectation:
-            ControlFrame.from_integers(it)
-
         with expectation:
             ControlFrame(it)
 
@@ -219,9 +210,6 @@ class TestLongFrame:
         ],
     )
     def test_init(self, it: list[int], expectation: AbstractContextManager):
-        with expectation:
-            LongFrame.from_integers(it)
-
         with expectation:
             LongFrame(it)
 

@@ -22,7 +22,7 @@ class DataRecordHeader(TelegramContainer):
     """
 
     def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        it = iter(ibytes)  # type: ignore [arg-type]
+        it = iter(ibytes if ibytes else [])
 
         dib = DIB(ibytes=it)
         vib = VIB(ibytes=it)
@@ -35,13 +35,11 @@ class DataRecordHeader(TelegramContainer):
     @property
     def dib(self) -> DIB:
         """Return DI block."""
-
         return self._dib
 
     @property
     def vib(self) -> VIB:
         """Return VI block."""
-
         return self._vib
 
 
@@ -58,7 +56,7 @@ class DataRecord(TelegramContainer):
     """
 
     def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:
-        it = iter(ibytes)  # type: ignore [arg-type]
+        it = iter(ibytes if ibytes else [])
 
         drh = DataRecordHeader(ibytes=it)
         data = TelegramContainer(ibytes=it)
@@ -71,11 +69,9 @@ class DataRecord(TelegramContainer):
     @property
     def drh(self) -> DataRecordHeader:
         """Return DataRecordHeader."""
-
         return self._drh
 
     @property
     def data(self) -> TelegramContainer:
         """Return data fields."""
-
         return self._data
