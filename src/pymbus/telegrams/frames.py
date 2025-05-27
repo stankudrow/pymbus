@@ -60,7 +60,6 @@ class SingleFrame(TelegramFrame):
         -------
         Self
         """
-
         return SingleFrame([byte])
 
     def __init__(self, ibytes: None | TelegramByteIterableType = None) -> None:

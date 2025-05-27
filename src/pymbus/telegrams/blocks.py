@@ -84,13 +84,11 @@ class DataInformationBlock(TelegramBlock):
     @property
     def dif(self) -> DIF:
         """Return the DIF field."""
-
         return self._dif
 
     @property
     def difes(self) -> list[DIFE]:
         """Return the list of DIFE fields."""
-
         return self._difes
 
 
@@ -157,11 +155,9 @@ class ValueInformationBlock(TelegramBlock):
     @property
     def vif(self) -> VIF:
         """Return the VIF field."""
-
         return self._vif
 
     @property
     def vifes(self) -> list[VIFE]:
         """Return the list of VIFE fields."""
-
         return self._vifes

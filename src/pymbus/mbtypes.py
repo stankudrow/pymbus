@@ -85,7 +85,6 @@ def parse_bcd_uint(ibytes: BytesType) -> int:
     -------
     int
     """
-
     bytez = _validate_non_empty_bytes(ibytes)
 
     msp, lsp = 0b1111_0000, 0b0000_1111
@@ -140,7 +139,6 @@ def parse_int(ibytes: BytesType) -> int:
     -------
     int
     """
-
     bytez = _validate_non_empty_bytes(ibytes)
 
     return int.from_bytes(
@@ -168,7 +166,6 @@ def parse_uint(ibytes: BytesType) -> int:
     -------
     int
     """
-
     bytez = _validate_non_empty_bytes(ibytes)
 
     return int.from_bytes(
@@ -199,7 +196,6 @@ def parse_bool(ibytes: BytesType) -> bool:
     -------
     bool
     """
-
     return bool(parse_uint(ibytes))
 
 
@@ -227,7 +223,6 @@ def parse_float(ibytes: BytesType) -> float:
     -------
     float
     """
-
     it = iter(ibytes)
     try:
         frame = [next(it) for _ in range(4)]
@@ -250,13 +245,11 @@ class UnitType:
     @classmethod
     def from_bytes(cls, frame: BytesType) -> "UnitType":
         """Return a `UnitType` from an array of bytes."""
-
         return cls(frame)
 
     @classmethod
     def from_hexstring(cls, hexstr: str) -> "UnitType":
         """Return a `UnitType` from a hexadecimal string."""
-
         barr = bytearray.fromhex(hexstr)
         return cls.from_bytes(barr)
 
@@ -317,7 +310,6 @@ def parse_unit_type(ibytes: BytesType) -> UnitType:
     -------
     UnitType
     """
-
     return UnitType(ibytes)
 
 
@@ -339,7 +331,6 @@ SECOND_MASK = 0x3F
 
 def get_year(lsp: int, msp: int) -> int:
     """Return the value of years from `lsp` and `msp` parts."""
-
     year_lsp = lsp & YEAR_MASK_LSB
     year_msp = msp & YEAR_MASK_MSB
 
@@ -353,13 +344,11 @@ def get_year(lsp: int, msp: int) -> int:
 
 def get_month(byte: int) -> int:
     """Return the value of months from a byte."""
-
     return byte & MONTH_MASK
 
 
 def get_day(byte: int) -> int:
     """Return the value of days from a byte."""
-
     return byte & DAY_MASK
 
 
@@ -381,7 +370,6 @@ def parse_date(ibytes: BytesType) -> date:
     -------
     date
     """
-
     it = iter(ibytes)
     try:
         lst = [next(it) for _ in range(2)]
@@ -406,20 +394,17 @@ class Date:
     @classmethod
     def from_date(cls, pydate: date) -> "Date":
         """Return a `Date` from a Python date."""
-
         return cls(year=pydate.year, month=pydate.month, day=pydate.day)
 
     @classmethod
     def from_bytes(cls, frame: BytesType) -> "Date":
         """Return a `Date` from an array of bytes."""
-
         pydate = parse_date(frame)
         return cls.from_date(pydate)
 
     @classmethod
     def from_hexstring(cls, hexstr: str) -> "Date":
         """Return a `Date` from a hexadecimal string."""
-
         barr = bytearray.fromhex(hexstr)
         return cls.from_bytes(barr)
 
@@ -461,19 +446,16 @@ class Date:
 
 def get_hour(byte: int) -> int:
     """Return the value of hours from a byte."""
-
     return byte & HOUR_MASK
 
 
 def get_minute(byte: int) -> int:
     """Return the value of minutes from a byte."""
-
     return byte & MINUTE_MASK
 
 
 def get_second(byte: int) -> int:
     """Return the value of seconds from a byte."""
-
     return byte & SECOND_MASK
 
 
@@ -489,7 +471,6 @@ def parse_time(ibytes: BytesType) -> time:
     -------
     time
     """
-
     it = iter(ibytes)
     lst = [next(it) for _ in range(2)]
 
@@ -542,14 +523,12 @@ class Time:
     @classmethod
     def from_bytes(cls, frame: BytesType) -> "Time":
         """Return a `Time` from an array of bytes."""
-
         pytime = parse_time(frame)
         return cls.from_time(pytime)
 
     @classmethod
     def from_hexstring(cls, hexstr: str) -> "Time":
         """Return a `Time` from a hexadecimal string."""
-
         barr = bytearray.fromhex(hexstr)
         return cls.from_bytes(barr)
 
@@ -609,7 +588,6 @@ def parse_datetime(ibytes: BytesType) -> datetime:
     -------
     datetime
     """
-
     it = iter(ibytes)
     try:
         lst = [next(it) for _ in range(4)]
@@ -647,7 +625,6 @@ class DateTime:
     @classmethod
     def from_datetime(cls, pydatetime: datetime) -> "DateTime":
         """Return a `DateTime` from a Python datetime."""
-
         return cls(
             year=pydatetime.year,
             month=pydatetime.month,
@@ -661,14 +638,12 @@ class DateTime:
     @classmethod
     def from_bytes(cls, frame: BytesType) -> "DateTime":
         """Return a `DateTime` from an array of bytes."""
-
         pydatetime = parse_datetime(frame)
         return cls.from_datetime(pydatetime)
 
     @classmethod
     def from_hexstring(cls, hexstr: str) -> "DateTime":
         """Return a `DateTime` from a hexadecimal string."""
-
         barr = bytes.fromhex(hexstr)
         return cls.from_bytes(barr)
 

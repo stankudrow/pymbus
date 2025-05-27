@@ -3,15 +3,19 @@
 ## v0.4.0
 
 - remake VIF codes ([PR-17](https://github.com/stankudrow/pymbus/pull/17) + [PR-18](https://github.com/stankudrow/pymbus/pull/18)):
-  - only one VIFCode (data)class for coding;
-  - the `get_vif_code` factory method is improved.
-- subclass TelegramContainer from Sequence ABC ([PR-16](https://github.com/stankudrow/pymbus/pull/16))
-- subclass the TelegramField class from Python int type ([PR-15](https://github.com/stankudrow/pymbus/pull/15)):
+  - only one VIFCode (data)class for coding
+  - the `get_vif_code` factory method is improved
+
+- subclass TelegramContainer from the `Sequence` ABC ([PR-16](https://github.com/stankudrow/pymbus/pull/16))
+
+- subclass the TelegramField class from Python `int` type ([PR-15](https://github.com/stankudrow/pymbus/pull/15)):
   - make TelegramField support the operations that `int` does;
   - ensure the byte range validation for TelegramField -> the `validate` flag removed;
   - unburden and simplify TelegramField successors and classes derived from TelegramContainer;
-  - revises with enhancements the [PR-11](https://github.com/stankudrow/pymbus/pull/11).
-- submodule specific Telegram fields (A, C, CI, Data, Value) ([PR-12](https://github.com/stankudrow/pymbus/pull/12)).
+  - revises the [PR-11](https://github.com/stankudrow/pymbus/pull/11).
+
+- submodule specific Telegram fields (A, C, CI, Data, Value) ([PR-12](https://github.com/stankudrow/pymbus/pull/12))
+
 - improve Telegram classes ([PR-11](https://github.com/stankudrow/pymbus/pull/11)):
   - the API of TelegramField is enriched:
     - `total_ordering` is enabled - the full set of arithmetic comparison operators are on
@@ -41,7 +45,7 @@ Added:
 
 Changed:
 
-- update project metadata;
+- update the project metadata;
 - lint the code and test base(s).
 
 ## v0.2.0
@@ -56,7 +60,7 @@ Added:
 
 Changed:
 
-- API: reconsidered and flatten;
+- API: reconsidered and flattened;
 - the former `DataRecord` class is now `DataRecordHeader`.
 
 ## v0.1.0

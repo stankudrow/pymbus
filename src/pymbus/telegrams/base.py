@@ -47,7 +47,6 @@ class TelegramContainer(Sequence):
     @classmethod
     def from_hexstring(cls, hexstr: str) -> "TelegramContainer":
         """Return a class instance from a hexadecimal string."""
-
         try:
             return cls(bytearray.fromhex(hexstr))
         except ValueError as e:
@@ -111,5 +110,4 @@ class TelegramContainer(Sequence):
 
     def count(self, value: Any) -> int:
         """Return the number of occurrences of value."""
-
         return self._fields.count(TelegramField(value))

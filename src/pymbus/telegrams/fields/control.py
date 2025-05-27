@@ -71,13 +71,11 @@ class ControlField(TelegramField):
     @property
     def code(self) -> int:
         """Return the action/function code value."""
-
         return self._code
 
     @property
     def fcb(self) -> int:
         """Return the "Frame Count Bit" (FCB) value."""
-
         if not self.is_calling_direction():
             msg = f'the {self} has no "Frame Count Bit" (FCB)'
             raise AttributeError(msg)
@@ -86,7 +84,6 @@ class ControlField(TelegramField):
     @property
     def fcv(self) -> int:
         """Return the "Frame Count Valid" (FCV) bit."""
-
         if not self.is_calling_direction():
             msg = f'the {self} has no "Frame Count Valid" (FCV) bit'
             raise AttributeError(msg)
@@ -95,7 +92,6 @@ class ControlField(TelegramField):
     @property
     def acd(self) -> int:
         """Return the "Access Demand" (ACD) bit."""
-
         if not self.is_reply_direction():
             msg = f'the {self} has no "Access Demand" (ACD) bit'
             raise AttributeError(msg)
@@ -104,7 +100,6 @@ class ControlField(TelegramField):
     @property
     def dfc(self) -> int:
         """Return the "Data Flow Control" (DFC) value."""
-
         if not self.is_reply_direction():
             msg = f'the {self} has no "Data Flow Control" (DFC) bit'
             raise AttributeError(msg)
@@ -113,15 +108,12 @@ class ControlField(TelegramField):
     @property
     def direction(self) -> int:
         """Return the direction bit value."""
-
         return self._direction
 
     def is_calling_direction(self) -> bool:
         """Return True if the 6th bit is 1."""
-
         return bool(self._direction)
 
     def is_reply_direction(self) -> bool:
         """Return True if the 6th bit is 0."""
-
         return not self._direction
