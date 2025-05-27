@@ -2,6 +2,9 @@
 
 ## v0.4.0
 
+- remake VIF codes ([PR-17](https://github.com/stankudrow/pymbus/pull/17) + [PR-18](https://github.com/stankudrow/pymbus/pull/18)):
+  - only one VIFCode (data)class for coding;
+  - the `get_vif_code` factory method is improved.
 - subclass TelegramContainer from Sequence ABC ([PR-16](https://github.com/stankudrow/pymbus/pull/16))
 - subclass the TelegramField class from Python int type ([PR-15](https://github.com/stankudrow/pymbus/pull/15)):
   - make TelegramField support the operations that `int` does;
