@@ -624,18 +624,6 @@ def test_no_vif_code():
             VIFCodeKind.manufacturer,
             VIFCodeUnit.unknown,
         ),
-        (
-            VIF(0b1111_1011),
-            1,
-            VIFCodeKind.extension,
-            VIFCodeUnit.unknown,
-        ),
-        (
-            VIF(0b1111_1101),
-            1,
-            VIFCodeKind.extension,
-            VIFCodeUnit.unknown,
-        ),
     ],
 )
 def test_vif_codes(vif: VIF, coef: float, kind: VIFCodeKind, unit: VIFCodeUnit):
@@ -645,3 +633,37 @@ def test_vif_codes(vif: VIF, coef: float, kind: VIFCodeKind, unit: VIFCodeUnit):
         kind=kind,
         unit=unit,
     )
+
+
+@pytest.mark.parametrize(
+    ("code", "answer"),
+    [
+        (
+            0b0000_0000,
+            VIFCode(
+                coef=1e-3, kind=VIFCodeKind.energy, unit=VIFCodeUnit.watt_hour
+            ),
+        ),
+        (
+            0b0010_0110,
+            VIFCode(
+                coef=3600,
+                kind=VIFCodeKind.operating_time,
+                unit=VIFCodeUnit.second,
+            ),
+        ),
+        (
+            0b0111_1000,
+            VIFCode(
+                coef=1,
+                kind=VIFCodeKind.fabrication_no,
+                unit=VIFCodeUnit.unknown,
+            ),
+        ),
+    ],
+)
+def test_vif_code_with_extensions(code: int, answer: VIF):
+    table = VIFTablet()
+
+    assert table(code) == answer
+    assert table(0x80 | code) == answer
