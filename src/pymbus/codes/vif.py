@@ -65,6 +65,22 @@ class VIFCodeUnit(str, Enum):
     datetime = "datetime"  # for a time point
 
 
+class VIFCodeFBExtUnit(str, Enum):
+    mega_watt_hour = "MWh"
+    giga_joule = "GJ"
+    meter_cubic = "m^3"
+    tonne = "t"
+    feet_cubic = "feet^3"
+    american_gallon = "american gallon"
+    american_gallon_per_minute = "(american gallon)/min"
+    american_gallon_per_hour = "(american gallon)/h"
+    mega_watt = "MW"
+    giga_joule_per_hour = "GJ/h"
+    fahrenheit = "F"
+    celsius = "C"
+    watt = "W"
+
+
 @dataclass
 class VIFCode:
     """Value Information Code."""
@@ -851,6 +867,27 @@ _VIF_CODE_MAP: dict[int, VIFCode] = {
     0b1111_1101: VIFCode(
         # code=0xFD,
         kind=VIFCodeKind.extension
+    ),
+}
+
+_VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
+    0b000_0000: VIFCode(
+        coef=1e-1, kind=VIFCodeKind.energy, unit=VIFCodeFBExtUnit.mega_watt_hour
+    ),
+    0b000_0001: VIFCode(
+        coef=1, kind=VIFCodeKind.energy, unit=VIFCodeFBExtUnit.mega_watt_hour
+    ),
+    0b000_0010: VIFCode(kind=VIFCodeKind.reserved),
+    0b000_0011: VIFCode(kind=VIFCodeKind.reserved),
+    0b000_0100: VIFCode(kind=VIFCodeKind.reserved),
+    0b000_0101: VIFCode(kind=VIFCodeKind.reserved),
+    0b000_0110: VIFCode(kind=VIFCodeKind.reserved),
+    0b000_0111: VIFCode(kind=VIFCodeKind.reserved),
+    0b000_1000: VIFCode(
+        coef=1e-1, kind=VIFCodeKind.energy, unit=VIFCodeFBExtUnit.giga_joule
+    ),
+    0b000_1001: VIFCode(
+        coef=1e0, kind=VIFCodeKind.energy, unit=VIFCodeFBExtUnit.giga_joule
     ),
 }
 
