@@ -87,6 +87,10 @@ class VIFCode:
     unit: str = VIFCodeUnit.unknown
 
 
+# for optimisation sake
+_reserved_vif_code = VIFCode(kind=VIFCodeKind.reserved)
+
+
 _VIF_CODE_MAP: dict[int, VIFCode] = {
     # E000_0nnn - Energy (Watt * hour = Wh)
     0b0000_0000: VIFCode(
@@ -867,13 +871,13 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
         coef=1e0, kind=VIFCodeKind.energy, unit=VIFCodeUnit.mega_watt_hour
     ),
     # E000_001n
-    0b000_0010: VIFCode(kind=VIFCodeKind.reserved),
-    0b000_0011: VIFCode(kind=VIFCodeKind.reserved),
+    0b000_0010: _reserved_vif_code,
+    0b000_0011: _reserved_vif_code,
     # E000_01nn
-    0b000_0100: VIFCode(kind=VIFCodeKind.reserved),
-    0b000_0101: VIFCode(kind=VIFCodeKind.reserved),
-    0b000_0110: VIFCode(kind=VIFCodeKind.reserved),
-    0b000_0111: VIFCode(kind=VIFCodeKind.reserved),
+    0b000_0100: _reserved_vif_code,
+    0b000_0101: _reserved_vif_code,
+    0b000_0110: _reserved_vif_code,
+    0b000_0111: _reserved_vif_code,
     # E000_100n
     0b000_1000: VIFCode(
         coef=1e-1, kind=VIFCodeKind.energy, unit=VIFCodeUnit.giga_joule
@@ -882,13 +886,13 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
         coef=1e0, kind=VIFCodeKind.energy, unit=VIFCodeUnit.giga_joule
     ),
     # E000_101n
-    0b0000_1010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0000_1011: VIFCode(kind=VIFCodeKind.reserved),
+    0b0000_1010: _reserved_vif_code,
+    0b0000_1011: _reserved_vif_code,
     # E000_11nn
-    0b0000_1100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0000_1101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0000_1110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0000_1111: VIFCode(kind=VIFCodeKind.reserved),
+    0b0000_1100: _reserved_vif_code,
+    0b0000_1101: _reserved_vif_code,
+    0b0000_1110: _reserved_vif_code,
+    0b0000_1111: _reserved_vif_code,
     # E001_000n
     0b0001_0000: VIFCode(
         coef=1e2, kind=VIFCodeKind.volume, unit=VIFCodeUnit.meter_cubic
@@ -897,13 +901,13 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
         coef=1e3, kind=VIFCodeKind.volume, unit=VIFCodeUnit.meter_cubic
     ),
     # E001_001n
-    0b0001_0010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0001_0011: VIFCode(kind=VIFCodeKind.reserved),
+    0b0001_0010: _reserved_vif_code,
+    0b0001_0011: _reserved_vif_code,
     # E001_01nn
-    0b0001_0100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0001_0101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0001_0110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0001_0111: VIFCode(kind=VIFCodeKind.reserved),
+    0b0001_0100: _reserved_vif_code,
+    0b0001_0101: _reserved_vif_code,
+    0b0001_0110: _reserved_vif_code,
+    0b0001_0111: _reserved_vif_code,
     # E001_100n
     0b0001_1000: VIFCode(
         coef=1e2, kind=VIFCodeKind.mass, unit=VIFCodeUnit.tonne
@@ -912,13 +916,13 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
         coef=1e3, kind=VIFCodeKind.mass, unit=VIFCodeUnit.tonne
     ),
     # E001_1010 to E010_0000
-    0b0001_1010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0001_1011: VIFCode(kind=VIFCodeKind.reserved),
-    0b0001_1100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0001_1101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0001_1110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0001_1111: VIFCode(kind=VIFCodeKind.reserved),
-    0b0010_0000: VIFCode(kind=VIFCodeKind.reserved),
+    0b0001_1010: _reserved_vif_code,
+    0b0001_1011: _reserved_vif_code,
+    0b0001_1100: _reserved_vif_code,
+    0b0001_1101: _reserved_vif_code,
+    0b0001_1110: _reserved_vif_code,
+    0b0001_1111: _reserved_vif_code,
+    0b0010_0000: _reserved_vif_code,
     # E010_0001
     0b0010_0001: VIFCode(
         coef=1e-1, kind=VIFCodeKind.volume, unit=VIFCodeUnit.feet_cubic
@@ -954,7 +958,7 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
         unit=VIFCodeUnit.american_gallon_per_hour,
     ),
     # E010_0111
-    0b0010_0111: VIFCode(kind=VIFCodeKind.reserved),
+    0b0010_0111: _reserved_vif_code,
     # E010_100n
     0b0010_1000: VIFCode(
         coef=1e-1, kind=VIFCodeKind.power, unit=VIFCodeUnit.mega_watt
@@ -963,59 +967,59 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
         coef=1, kind=VIFCodeKind.power, unit=VIFCodeUnit.mega_watt
     ),
     # E010_101n
-    0b0010_1010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0010_1011: VIFCode(kind=VIFCodeKind.reserved),
+    0b0010_1010: _reserved_vif_code,
+    0b0010_1011: _reserved_vif_code,
     # E010_11nn
-    0b0010_1100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0010_1101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0010_1110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0010_1111: VIFCode(kind=VIFCodeKind.reserved),
+    0b0010_1100: _reserved_vif_code,
+    0b0010_1101: _reserved_vif_code,
+    0b0010_1110: _reserved_vif_code,
+    0b0010_1111: _reserved_vif_code,
     # E011_000n
     0b0011_0000: VIFCode(
-        coef=1e-1, kind=VIFCodeKind.power, unit=VIFCodeUnit.mega_watt
+        coef=1e-1, kind=VIFCodeKind.power, unit=VIFCodeUnit.giga_joule_per_hour
     ),
     0b0011_0001: VIFCode(
-        coef=1, kind=VIFCodeKind.power, unit=VIFCodeUnit.mega_watt
+        coef=1, kind=VIFCodeKind.power, unit=VIFCodeUnit.giga_joule_per_hour
     ),
     # E011_0010 to E101_0111
-    0b0011_0010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_0011: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_0100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_0101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_0110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_0111: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_1000: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_1001: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_1010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_1011: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_1100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_1101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_1110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0011_1111: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_0000: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_0001: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_0010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_0011: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_0100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_0101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_0110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_0111: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_1000: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_1001: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_1010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_1011: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_1100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_1101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_1110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0100_1111: VIFCode(kind=VIFCodeKind.reserved),
-    0b0101_0000: VIFCode(kind=VIFCodeKind.reserved),
-    0b0101_0001: VIFCode(kind=VIFCodeKind.reserved),
-    0b0101_0010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0101_0011: VIFCode(kind=VIFCodeKind.reserved),
-    0b0101_0100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0101_0101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0101_0110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0101_0111: VIFCode(kind=VIFCodeKind.reserved),
+    0b0011_0010: _reserved_vif_code,
+    0b0011_0011: _reserved_vif_code,
+    0b0011_0100: _reserved_vif_code,
+    0b0011_0101: _reserved_vif_code,
+    0b0011_0110: _reserved_vif_code,
+    0b0011_0111: _reserved_vif_code,
+    0b0011_1000: _reserved_vif_code,
+    0b0011_1001: _reserved_vif_code,
+    0b0011_1010: _reserved_vif_code,
+    0b0011_1011: _reserved_vif_code,
+    0b0011_1100: _reserved_vif_code,
+    0b0011_1101: _reserved_vif_code,
+    0b0011_1110: _reserved_vif_code,
+    0b0011_1111: _reserved_vif_code,
+    0b0100_0000: _reserved_vif_code,
+    0b0100_0001: _reserved_vif_code,
+    0b0100_0010: _reserved_vif_code,
+    0b0100_0011: _reserved_vif_code,
+    0b0100_0100: _reserved_vif_code,
+    0b0100_0101: _reserved_vif_code,
+    0b0100_0110: _reserved_vif_code,
+    0b0100_0111: _reserved_vif_code,
+    0b0100_1000: _reserved_vif_code,
+    0b0100_1001: _reserved_vif_code,
+    0b0100_1010: _reserved_vif_code,
+    0b0100_1011: _reserved_vif_code,
+    0b0100_1100: _reserved_vif_code,
+    0b0100_1101: _reserved_vif_code,
+    0b0100_1110: _reserved_vif_code,
+    0b0100_1111: _reserved_vif_code,
+    0b0101_0000: _reserved_vif_code,
+    0b0101_0001: _reserved_vif_code,
+    0b0101_0010: _reserved_vif_code,
+    0b0101_0011: _reserved_vif_code,
+    0b0101_0100: _reserved_vif_code,
+    0b0101_0101: _reserved_vif_code,
+    0b0101_0110: _reserved_vif_code,
+    0b0101_0111: _reserved_vif_code,
     # E101_10nn
     0b0101_1000: VIFCode(
         coef=1e-3,
@@ -1101,14 +1105,14 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
         unit=VIFCodeUnit.fahrenheit,
     ),
     # E110_1nnn
-    0b0110_1000: VIFCode(kind=VIFCodeKind.reserved),
-    0b0110_1001: VIFCode(kind=VIFCodeKind.reserved),
-    0b0110_1010: VIFCode(kind=VIFCodeKind.reserved),
-    0b0110_1011: VIFCode(kind=VIFCodeKind.reserved),
-    0b0110_1100: VIFCode(kind=VIFCodeKind.reserved),
-    0b0110_1101: VIFCode(kind=VIFCodeKind.reserved),
-    0b0110_1110: VIFCode(kind=VIFCodeKind.reserved),
-    0b0110_1111: VIFCode(kind=VIFCodeKind.reserved),
+    0b0110_1000: _reserved_vif_code,
+    0b0110_1001: _reserved_vif_code,
+    0b0110_1010: _reserved_vif_code,
+    0b0110_1011: _reserved_vif_code,
+    0b0110_1100: _reserved_vif_code,
+    0b0110_1101: _reserved_vif_code,
+    0b0110_1110: _reserved_vif_code,
+    0b0110_1111: _reserved_vif_code,
     # E111_00nn
     0b0111_0000: VIFCode(
         coef=1e-3,
