@@ -1,5 +1,6 @@
 """M-Bus Value Information Field Code module."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
 
@@ -44,7 +45,7 @@ class VIFCodeKind(str, Enum):
 
 
 class VIFCodeUnit(str, Enum):
-    """VIF code unit(s)."""
+    """VIF code (include extended) unit(s)."""
 
     unknown = ""
     watt_hour = "Wh"
@@ -64,12 +65,9 @@ class VIFCodeUnit(str, Enum):
     hca = "H.C.A. Units"
     date = "date"  # for a time point
     datetime = "datetime"  # for a time point
-
-
-class VIFCodeFBExtUnit(str, Enum):
+    # 0xFB extension VIF code extra units
     mega_watt_hour = "MWh"
     giga_joule = "GJ"
-    meter_cubic = "m^3"
     tonne = "t"
     feet_cubic = "feet^3"
     american_gallon = "american gallon"
@@ -78,8 +76,6 @@ class VIFCodeFBExtUnit(str, Enum):
     mega_watt = "MW"
     giga_joule_per_hour = "GJ/h"
     fahrenheit = "F"
-    celsius = "C"
-    watt = "W"
 
 
 @dataclass
@@ -865,10 +861,10 @@ _VIF_CODE_MAP: dict[int, VIFCode] = {
 _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
     # E000_000n
     0b000_0000: VIFCode(
-        coef=1e-1, kind=VIFCodeKind.energy, unit=VIFCodeFBExtUnit.mega_watt_hour
+        coef=1e-1, kind=VIFCodeKind.energy, unit=VIFCodeUnit.mega_watt_hour
     ),
     0b000_0001: VIFCode(
-        coef=1e0, kind=VIFCodeKind.energy, unit=VIFCodeFBExtUnit.mega_watt_hour
+        coef=1e0, kind=VIFCodeKind.energy, unit=VIFCodeUnit.mega_watt_hour
     ),
     # E000_001n
     0b000_0010: VIFCode(kind=VIFCodeKind.reserved),
@@ -880,10 +876,10 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
     0b000_0111: VIFCode(kind=VIFCodeKind.reserved),
     # E000_100n
     0b000_1000: VIFCode(
-        coef=1e-1, kind=VIFCodeKind.energy, unit=VIFCodeFBExtUnit.giga_joule
+        coef=1e-1, kind=VIFCodeKind.energy, unit=VIFCodeUnit.giga_joule
     ),
     0b000_1001: VIFCode(
-        coef=1e0, kind=VIFCodeKind.energy, unit=VIFCodeFBExtUnit.giga_joule
+        coef=1e0, kind=VIFCodeKind.energy, unit=VIFCodeUnit.giga_joule
     ),
     # E000_101n
     0b0000_1010: VIFCode(kind=VIFCodeKind.reserved),
@@ -895,10 +891,10 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
     0b0000_1111: VIFCode(kind=VIFCodeKind.reserved),
     # E001_000n
     0b0001_0000: VIFCode(
-        coef=1e2, kind=VIFCodeKind.volume, unit=VIFCodeFBExtUnit.meter_cubic
+        coef=1e2, kind=VIFCodeKind.volume, unit=VIFCodeUnit.meter_cubic
     ),
     0b0001_0001: VIFCode(
-        coef=1e3, kind=VIFCodeKind.volume, unit=VIFCodeFBExtUnit.meter_cubic
+        coef=1e3, kind=VIFCodeKind.volume, unit=VIFCodeUnit.meter_cubic
     ),
     # E001_001n
     0b0001_0010: VIFCode(kind=VIFCodeKind.reserved),
@@ -910,10 +906,10 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
     0b0001_0111: VIFCode(kind=VIFCodeKind.reserved),
     # E001_100n
     0b0001_1000: VIFCode(
-        coef=1e2, kind=VIFCodeKind.mass, unit=VIFCodeFBExtUnit.tonne
+        coef=1e2, kind=VIFCodeKind.mass, unit=VIFCodeUnit.tonne
     ),
     0b0001_1001: VIFCode(
-        coef=1e3, kind=VIFCodeKind.mass, unit=VIFCodeFBExtUnit.tonne
+        coef=1e3, kind=VIFCodeKind.mass, unit=VIFCodeUnit.tonne
     ),
     # E001_1010 to E010_0000
     0b0001_1010: VIFCode(kind=VIFCodeKind.reserved),
@@ -925,46 +921,46 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
     0b0010_0000: VIFCode(kind=VIFCodeKind.reserved),
     # E010_0001
     0b0010_0001: VIFCode(
-        coef=1e-1, kind=VIFCodeKind.volume, unit=VIFCodeFBExtUnit.feet_cubic
+        coef=1e-1, kind=VIFCodeKind.volume, unit=VIFCodeUnit.feet_cubic
     ),
     # E010_0010
     0b0010_0010: VIFCode(
         coef=1e-1,
         kind=VIFCodeKind.volume,
-        unit=VIFCodeFBExtUnit.american_gallon,
+        unit=VIFCodeUnit.american_gallon,
     ),
     # E010_0011
     0b0010_0011: VIFCode(
-        coef=1e-1,
+        coef=1,
         kind=VIFCodeKind.volume,
-        unit=VIFCodeFBExtUnit.american_gallon,
+        unit=VIFCodeUnit.american_gallon,
     ),
     # E010_0100
     0b0010_0100: VIFCode(
         coef=1e-3,
         kind=VIFCodeKind.volume_flow,
-        unit=VIFCodeFBExtUnit.american_gallon_per_minute,
+        unit=VIFCodeUnit.american_gallon_per_minute,
     ),
     # E010_0101
     0b0010_0101: VIFCode(
         coef=1,
         kind=VIFCodeKind.volume_flow,
-        unit=VIFCodeFBExtUnit.american_gallon_per_minute,
+        unit=VIFCodeUnit.american_gallon_per_minute,
     ),
     # E010_0110
     0b0010_0110: VIFCode(
         coef=1,
         kind=VIFCodeKind.volume_flow,
-        unit=VIFCodeFBExtUnit.american_gallon_per_hour,
+        unit=VIFCodeUnit.american_gallon_per_hour,
     ),
     # E010_0111
     0b0010_0111: VIFCode(kind=VIFCodeKind.reserved),
     # E010_100n
     0b0010_1000: VIFCode(
-        coef=1e-1, kind=VIFCodeKind.power, unit=VIFCodeFBExtUnit.mega_watt
+        coef=1e-1, kind=VIFCodeKind.power, unit=VIFCodeUnit.mega_watt
     ),
     0b0010_1001: VIFCode(
-        coef=1, kind=VIFCodeKind.power, unit=VIFCodeFBExtUnit.mega_watt
+        coef=1, kind=VIFCodeKind.power, unit=VIFCodeUnit.mega_watt
     ),
     # E010_101n
     0b0010_1010: VIFCode(kind=VIFCodeKind.reserved),
@@ -976,10 +972,10 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
     0b0010_1111: VIFCode(kind=VIFCodeKind.reserved),
     # E011_000n
     0b0011_0000: VIFCode(
-        coef=1e-1, kind=VIFCodeKind.power, unit=VIFCodeFBExtUnit.mega_watt
+        coef=1e-1, kind=VIFCodeKind.power, unit=VIFCodeUnit.mega_watt
     ),
     0b0011_0001: VIFCode(
-        coef=1, kind=VIFCodeKind.power, unit=VIFCodeFBExtUnit.mega_watt
+        coef=1, kind=VIFCodeKind.power, unit=VIFCodeUnit.mega_watt
     ),
     # E011_0010 to E101_0111
     0b0011_0010: VIFCode(kind=VIFCodeKind.reserved),
@@ -1024,85 +1020,85 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
     0b0101_1000: VIFCode(
         coef=1e-3,
         kind=VIFCodeKind.flow_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0101_1001: VIFCode(
         coef=1e-2,
         kind=VIFCodeKind.flow_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0101_1010: VIFCode(
         coef=1e-1,
         kind=VIFCodeKind.flow_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0101_1011: VIFCode(
         coef=1,
         kind=VIFCodeKind.flow_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     # E101_11nn
     0b0101_1100: VIFCode(
         coef=1e-3,
         kind=VIFCodeKind.return_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0101_1101: VIFCode(
         coef=1e-2,
         kind=VIFCodeKind.return_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0101_1110: VIFCode(
         coef=1e-1,
         kind=VIFCodeKind.return_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0101_1111: VIFCode(
         coef=1,
         kind=VIFCodeKind.return_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     # E110_00nn
     0b0110_0000: VIFCode(
         coef=1e-3,
         kind=VIFCodeKind.temperature_difference,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0110_0001: VIFCode(
         coef=1e-2,
         kind=VIFCodeKind.temperature_difference,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0110_0010: VIFCode(
         coef=1e-1,
         kind=VIFCodeKind.temperature_difference,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0110_0011: VIFCode(
         coef=1,
         kind=VIFCodeKind.temperature_difference,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     # E110_01nn
     0b0110_0100: VIFCode(
         coef=1e-3,
         kind=VIFCodeKind.external_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0110_0101: VIFCode(
         coef=1e-2,
         kind=VIFCodeKind.external_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0110_0110: VIFCode(
         coef=1e-1,
         kind=VIFCodeKind.external_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0110_0111: VIFCode(
         coef=1,
         kind=VIFCodeKind.external_temperature,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     # E110_1nnn
     0b0110_1000: VIFCode(kind=VIFCodeKind.reserved),
@@ -1117,95 +1113,99 @@ _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
     0b0111_0000: VIFCode(
         coef=1e-3,
         kind=VIFCodeKind.cold_warm_temperature_limit,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0111_0001: VIFCode(
         coef=1e-2,
         kind=VIFCodeKind.cold_warm_temperature_limit,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0111_0010: VIFCode(
         coef=1e-1,
         kind=VIFCodeKind.cold_warm_temperature_limit,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     0b0111_0011: VIFCode(
         coef=1,
         kind=VIFCodeKind.cold_warm_temperature_limit,
-        unit=VIFCodeFBExtUnit.fahrenheit,
+        unit=VIFCodeUnit.fahrenheit,
     ),
     # E111_01nn
     0b0111_0100: VIFCode(
         coef=1e-3,
         kind=VIFCodeKind.cold_warm_temperature_limit,
-        unit=VIFCodeFBExtUnit.celsius,
+        unit=VIFCodeUnit.celsius,
     ),
     0b0111_0101: VIFCode(
         coef=1e-2,
         kind=VIFCodeKind.cold_warm_temperature_limit,
-        unit=VIFCodeFBExtUnit.celsius,
+        unit=VIFCodeUnit.celsius,
     ),
     0b0111_0110: VIFCode(
         coef=1e-1,
         kind=VIFCodeKind.cold_warm_temperature_limit,
-        unit=VIFCodeFBExtUnit.celsius,
+        unit=VIFCodeUnit.celsius,
     ),
     0b0111_0111: VIFCode(
         coef=1,
         kind=VIFCodeKind.cold_warm_temperature_limit,
-        unit=VIFCodeFBExtUnit.celsius,
+        unit=VIFCodeUnit.celsius,
     ),
     # E111_1nnn
     0b0111_1000: VIFCode(
         coef=1e-3,
         kind=VIFCodeKind.cumul_count_max_power,
-        unit=VIFCodeFBExtUnit.watt,
+        unit=VIFCodeUnit.watt,
     ),
     0b0111_1001: VIFCode(
         coef=1e-2,
         kind=VIFCodeKind.cumul_count_max_power,
-        unit=VIFCodeFBExtUnit.watt,
+        unit=VIFCodeUnit.watt,
     ),
     0b0111_1010: VIFCode(
         coef=1e-1,
         kind=VIFCodeKind.cumul_count_max_power,
-        unit=VIFCodeFBExtUnit.watt,
+        unit=VIFCodeUnit.watt,
     ),
     0b0111_1011: VIFCode(
         coef=1,
         kind=VIFCodeKind.cumul_count_max_power,
-        unit=VIFCodeFBExtUnit.watt,
+        unit=VIFCodeUnit.watt,
     ),
     0b0111_1100: VIFCode(
         coef=1e1,
         kind=VIFCodeKind.cumul_count_max_power,
-        unit=VIFCodeFBExtUnit.watt,
+        unit=VIFCodeUnit.watt,
     ),
     0b0111_1101: VIFCode(
         coef=1e2,
         kind=VIFCodeKind.cumul_count_max_power,
-        unit=VIFCodeFBExtUnit.watt,
+        unit=VIFCodeUnit.watt,
     ),
     0b0111_1110: VIFCode(
         coef=1e3,
         kind=VIFCodeKind.cumul_count_max_power,
-        unit=VIFCodeFBExtUnit.watt,
+        unit=VIFCodeUnit.watt,
     ),
     0b0111_1111: VIFCode(
         coef=1e4,
         kind=VIFCodeKind.cumul_count_max_power,
-        unit=VIFCodeFBExtUnit.watt,
+        unit=VIFCodeUnit.watt,
     ),
 }
 
 
-def _get_vif_code(value: int) -> None | VIFCode:
+def _get_vif_code(
+    value: int, /, source: Mapping[int, VIFCode]
+) -> None | VIFCode:
     """Return the VIFCode according to the given VIF.
 
     Parameters
     ----------
     value : int
         either an integer or VIF class
+    source : Mapping[int, VIFCode]
+        a source table which retrieving the VIF codes from
 
     Raises
     ------
@@ -1221,45 +1221,19 @@ def _get_vif_code(value: int) -> None | VIFCode:
     # VIF < TelegramField < int and (!)
     # a VIF does not accept a TelegramField.
     vif = VIF(int(value))
-    if code := _VIF_CODE_MAP.get(vif.data):
+    if code := source.get(vif.data):
         return code
     # trying with an extension bit set
-    return _VIF_CODE_MAP.get(int(vif))
-
-
-def _get_vif_code_from_fb_ext(value: int) -> None | VIFCode:
-    """Return the VIFCode according to the given VIF(0xFB).
-
-    Parameters
-    ----------
-    value : int
-        either an integer or VIF class
-
-    Raises
-    ------
-    MBusValidationError
-        if `value` is not within the byte range
-
-    Returns
-    -------
-    None | VIFCode
-    """
-    # Value validation by casting to VIF.
-    # The `int(value)` is important:
-    # VIF < TelegramField < int and (!)
-    # a VIF does not accept a TelegramField.
-    vif = VIF(int(value))
-    if code := _VIF_CODE_FB_EXTENSION_MAP.get(vif.data):
-        return code
-    # trying with an extension bit set
-    return _VIF_CODE_FB_EXTENSION_MAP.get(int(vif))
+    return source.get(int(vif))
 
 
 class VIFTablet:
     """VIFCode Table(t) Manager class."""
 
-    def __call__(self, value: int | VIF | VIFE) -> None | VIFCode:
+    def __call__(
+        self, value: int | VIF | VIFE, *, extension_byte: None | int = None
+    ) -> None | VIFCode:
         value = int(value)
-        if value == 0xFB:
-            return _get_vif_code_from_fb_ext(value)
-        return _get_vif_code(value)
+        if extension_byte == 0xFB:
+            return _get_vif_code(value, source=_VIF_CODE_FB_EXTENSION_MAP)
+        return _get_vif_code(value, source=_VIF_CODE_MAP)
