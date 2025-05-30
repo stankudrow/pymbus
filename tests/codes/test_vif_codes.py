@@ -10,12 +10,12 @@ from pymbus.exceptions import MBusValidationError
 from pymbus.telegrams.fields import ValueInformationField as VIF
 
 
-def test_bad_nonbyte_value():
+def test_nonbyte_value_selection():
     with pytest.raises(MBusValidationError):
         VIFTablet()(266)
 
 
-def test_no_vif_code():
+def test_vif_code_absence():
     assert VIFTablet()(VIF(0b0111_1011)) is None
 
 
@@ -626,44 +626,158 @@ def test_no_vif_code():
         ),
     ],
 )
-def test_vif_codes(vif: VIF, coef: float, kind: VIFCodeKind, unit: VIFCodeUnit):
+def test_vif_code_selection(
+    vif: VIF, coef: float, kind: VIFCodeKind, unit: VIFCodeUnit
+):
     table = VIFTablet()
-    assert table(vif) == VIFCode(
+
+    code = table(vif)
+    answer = VIFCode(
         coef=coef,
         kind=kind,
         unit=unit,
     )
 
+    assert code == answer
+    assert table(0x80 | vif) == answer
+
 
 @pytest.mark.parametrize(
-    ("code", "answer"),
+    ("vif", "coef", "kind", "unit"),
     [
         (
-            0b0000_0000,
-            VIFCode(
-                coef=1e-3, kind=VIFCodeKind.energy, unit=VIFCodeUnit.watt_hour
-            ),
+            VIF(0b0000_0000),
+            1e-1,
+            VIFCodeKind.energy,
+            VIFCodeUnit.mega_watt_hour,
         ),
         (
-            0b0010_0110,
-            VIFCode(
-                coef=3600,
-                kind=VIFCodeKind.operating_time,
-                unit=VIFCodeUnit.second,
-            ),
+            VIF(0b0000_0001),
+            1e0,
+            VIFCodeKind.energy,
+            VIFCodeUnit.mega_watt_hour,
         ),
         (
-            0b0111_1000,
-            VIFCode(
-                coef=1,
-                kind=VIFCodeKind.fabrication_no,
-                unit=VIFCodeUnit.unknown,
-            ),
+            VIF(0b0000_0010),
+            1e0,
+            VIFCodeKind.reserved,
+            VIFCodeUnit.unknown,
         ),
+        (
+            VIF(0b0000_0011),
+            1e0,
+            VIFCodeKind.reserved,
+            VIFCodeUnit.unknown,
+        ),
+        (
+            VIF(0b0000_0100),
+            1e0,
+            VIFCodeKind.reserved,
+            VIFCodeUnit.unknown,
+        ),
+        (
+            VIF(0b0000_0101),
+            1e0,
+            VIFCodeKind.reserved,
+            VIFCodeUnit.unknown,
+        ),
+        (
+            VIF(0b0000_0110),
+            1e0,
+            VIFCodeKind.reserved,
+            VIFCodeUnit.unknown,
+        ),
+        (
+            VIF(0b0000_0111),
+            1e0,
+            VIFCodeKind.reserved,
+            VIFCodeUnit.unknown,
+        ),
+        (VIF(0b0000_1000), 1e-1, VIFCodeKind.energy, VIFCodeUnit.giga_joule),
+        (VIF(0b0000_1001), 1e0, VIFCodeKind.energy, VIFCodeUnit.giga_joule),
+        (VIF(0b0000_1010), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0000_1011), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0000_1100), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0000_1101), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0000_1110), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0000_1111), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (
+            VIF(0b0001_0000),
+            1e2,
+            VIFCodeKind.volume,
+            VIFCodeUnit.meter_cubic,
+        ),
+        (
+            VIF(0b0001_0001),
+            1e3,
+            VIFCodeKind.volume,
+            VIFCodeUnit.meter_cubic,
+        ),
+        (VIF(0b0001_0010), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_0011), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_0100), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_0101), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_0110), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_0111), 1e0, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (
+            VIF(0b0001_1000),
+            1e2,
+            VIFCodeKind.mass,
+            VIFCodeUnit.tonne,
+        ),
+        (
+            VIF(0b0001_1001),
+            1e3,
+            VIFCodeKind.mass,
+            VIFCodeUnit.tonne,
+        ),
+        (VIF(0b0001_1010), 1, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_1011), 1, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_1100), 1, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_1101), 1, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_1110), 1, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0001_1111), 1, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0010_0000), 1, VIFCodeKind.reserved, VIFCodeUnit.unknown),
+        (VIF(0b0010_0001), 1e-1, VIFCodeKind.volume, VIFCodeUnit.feet_cubic),
+        (
+            VIF(0b0010_0010),
+            1e-1,
+            VIFCodeKind.volume,
+            VIFCodeUnit.american_gallon,
+        ),
+        (VIF(0b0010_0011), 1, VIFCodeKind.volume, VIFCodeUnit.american_gallon),
+        (
+            VIF(0b0010_0100),
+            0.001,
+            VIFCodeKind.volume_flow,
+            VIFCodeUnit.american_gallon_per_minute,
+        ),
+        (
+            VIF(0b0010_0101),
+            1,
+            VIFCodeKind.volume_flow,
+            VIFCodeUnit.american_gallon_per_minute,
+        ),
+        (
+            VIF(0b0010_0110),
+            1,
+            VIFCodeKind.volume_flow,
+            VIFCodeUnit.american_gallon_per_hour,
+        ),
+        (VIF(0b0010_0111), 1, VIFCodeKind.reserved, VIFCodeUnit.unknown),
     ],
 )
-def test_vif_code_with_extensions(code: int, answer: VIF):
+def test_extended_fb_vif_code_selection(
+    vif: VIF, coef: float, kind: VIFCodeKind, unit: VIFCodeUnit
+):
     table = VIFTablet()
+    ext_byte = 0xFB
 
-    assert table(code) == answer
-    assert table(0x80 | code) == answer
+    answer = VIFCode(
+        coef=coef,
+        kind=kind,
+        unit=unit,
+    )
+
+    assert table(vif, extension_byte=ext_byte) == answer
+    assert table(0x80 | vif, extension_byte=ext_byte) == answer
