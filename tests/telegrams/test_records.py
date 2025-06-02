@@ -51,7 +51,7 @@ class TestDataRecordHeader:
         ],
     )
     def test_non_greediness(self, data: bytes, answer: list):
-        gen = (item for item in data)
+        gen = iter(data)
         dr = DRH(ibytes=gen)
 
         blocks = [dr.dib, dr.vib]

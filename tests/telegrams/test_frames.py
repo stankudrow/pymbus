@@ -71,7 +71,7 @@ class TestShortFrame:
 
     def test_non_greediness(self):
         it = [SHORT_FRAME_START_BYTE, 2, 3, 4, FRAME_STOP_BYTE, 5]
-        gen = (b for b in it)
+        gen = iter(it)
 
         ShortFrame(gen)
 
@@ -140,7 +140,7 @@ class TestControlFrame:
             FRAME_STOP_BYTE,
             21,
         ]
-        gen = (b for b in it)
+        gen = iter(it)
 
         ControlFrame(gen)
 
@@ -227,7 +227,7 @@ class TestLongFrame:
             FRAME_STOP_BYTE,
             42,
         ]
-        gen = (b for b in it)
+        gen = iter(it)
 
         LongFrame(gen)
 

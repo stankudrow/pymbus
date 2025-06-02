@@ -10,6 +10,18 @@ from pymbus.telegrams.blocks import (
 from pymbus.telegrams.blocks import (
     ValueInformationBlock as VIB,
 )
+from pymbus.telegrams.fields import (
+    DataInformationField as DIF,
+)
+from pymbus.telegrams.fields import (
+    DataInformationFieldExtension as DIFE,
+)
+from pymbus.telegrams.fields import (
+    ValueInformationField as VIF,
+)
+from pymbus.telegrams.fields import (
+    ValueInformationFieldExtension as VIFE,
+)
 
 
 class TestDIB:
@@ -86,11 +98,18 @@ class TestDIB:
         ],
     )
     def test_non_greediness(self, it: list[int], nbytes: int):
-        gen = (el for el in it)
+        gen = iter(it)
         dib = DIB(gen)
 
         assert list(dib) == it[:nbytes]
         assert list(gen) == it[nbytes:]
+
+    def test_dif_and_dife_attrs(self):
+        data = [0b1000_0000, 0b1000_0001, 0b1000_0010, 0b0000_0011]
+        dib = DIB(data)
+
+        assert dib.dif == DIF(0x80)
+        assert dib.difes == [DIFE(0x81), DIFE(0x82), DIFE(0x03)]
 
 
 class TestVIB:
@@ -167,8 +186,15 @@ class TestVIB:
         ],
     )
     def test_non_greediness(self, it: list[int], nbytes: int):
-        gen = (el for el in it)
-        dib = DIB(gen)
+        gen = iter(it)
+        vib = VIB(gen)
 
-        assert list(dib) == it[:nbytes]
+        assert list(vib) == it[:nbytes]
         assert list(gen) == it[nbytes:]
+
+    def test_vif_and_vife_attrs(self):
+        data = [0b1000_0000, 0b1000_0001, 0b1000_0010, 0b0000_0011]
+        vib = VIB(data)
+
+        assert vib.vif == VIF(0x80)
+        assert vib.vifes == [VIFE(0x81), VIFE(0x82), VIFE(0x03)]
