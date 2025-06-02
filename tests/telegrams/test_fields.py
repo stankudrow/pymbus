@@ -292,7 +292,7 @@ class TestVIF:
             (0b0011_1111, 0b0011_1111),
         ],
     )
-    def test_vif_unit(self, byte: int, data: int):
+    def test_vif_data_extraction(self, byte: int, data: int):
         vif = VIF(byte)
 
         assert vif.data == data
