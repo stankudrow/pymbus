@@ -651,23 +651,15 @@ def test_wrong_extension_bit_value():
             VIFCodeKind.manufacturer_specific,
             VIFCodeUnit.unknown,
         ),
+        # extension codes -> explicitly returned
+        (VIF(0b1111_1011), 1, VIFCodeKind.extension, VIFCodeUnit.unknown),
+        (VIF(0b1111_1101), 1, VIFCodeKind.extension, VIFCodeUnit.unknown),
     ],
 )
 def test_vif_code_selection(
     vif: VIF, coef: float, kind: VIFCodeKind, unit: VIFCodeUnit
 ):
     _assert_vif_code(vif=vif, coef=coef, kind=kind, unit=unit)
-    # table = VIFTablet()
-
-    # code = table(vif)
-    # answer = VIFCode(
-    #     coef=coef,
-    #     kind=kind,
-    #     unit=unit,
-    # )
-
-    # assert code == answer
-    # assert table(0x80 | vif) == answer
 
 
 @pytest.mark.parametrize(

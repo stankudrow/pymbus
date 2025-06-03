@@ -18,6 +18,7 @@ class VIFCodeKind(str, Enum):
     # auxiliary meta categories
     unknown = ""
     reserved = "reserved"
+    extension = "extension code"
     # kinds defined in the table
     energy = "energy"
     volume = "volume"
@@ -922,6 +923,9 @@ _VIF_CODE_MAP: dict[int, VIFCode] = {
         # code=0x7F,
         kind=VIFCodeKind.manufacturer_specific
     ),
+    # extension codes
+    0b1111_1011: VIFCode(kind=VIFCodeKind.extension),
+    0b1111_1101: VIFCode(kind=VIFCodeKind.extension),
 }
 
 _VIF_CODE_FB_EXTENSION_MAP: dict[int, VIFCode] = {
