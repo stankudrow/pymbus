@@ -7,6 +7,9 @@ from enum import Enum
 from pymbus.telegrams.fields import (
     ValueInformationField as VIF,
 )
+from pymbus.telegrams.fields import (
+    ValueInformationFieldExtension as VIFE,
+)
 
 
 class VIFCodeKind(str, Enum):
@@ -1580,9 +1583,7 @@ _VIF_CODE_FD_EXTENSION_MAP: dict[int, VIFCode] = {
 }
 
 
-def _get_vif_code(
-    value: int, /, source: Mapping[int, VIFCode]
-) -> None | VIFCode:
+def _get_code(value: int, /, source: Mapping[int, VIFCode]) -> None | VIFCode:
     """Return the VIFCode according to the given VIF.
 
     Parameters
@@ -1612,11 +1613,14 @@ def _get_vif_code(
     return source.get(int(vif))
 
 
-class VIFTablet:
-    """VIFCode Table(t) Manager class."""
+class VIFCodeTable:
+    """VIFCode Table Manager class."""
 
-    def get_vif_code(
-        self, value: int | VIF, *, extension_byte: None | int = None
+    def __call__(
+        self,
+        value: int | VIF | VIFE,
+        *,
+        extension_byte: None | int | VIF = None,
     ) -> None | VIFCode:
         """Return VIFCode according to `value` byte.
 
@@ -1624,7 +1628,7 @@ class VIFTablet:
         ----------
         value : int | VIF
             a byte value that can match a certain VIF code
-        extension_byte : None | int, default None
+        extension_byte : None | int | VIFE, default None
             get a VIFCode from an extended table
             according to `extension_byte` value
 
@@ -1637,12 +1641,12 @@ class VIFTablet:
         -------
         None | VIFCode
         """
-        value = int(value)
+        value = int(value)  # see type hints for mapping -> int key
         if extension_byte is None:
-            return _get_vif_code(value, source=_VIF_CODE_MAP)
+            return _get_code(value, source=_VIF_CODE_MAP)
         if extension_byte == 0xFB:
-            return _get_vif_code(value, source=_VIF_CODE_FB_EXTENSION_MAP)
+            return _get_code(value, source=_VIF_CODE_FB_EXTENSION_MAP)
         if extension_byte == 0xFD:
-            return _get_vif_code(value, source=_VIF_CODE_FD_EXTENSION_MAP)
+            return _get_code(value, source=_VIF_CODE_FD_EXTENSION_MAP)
         msg = f"wrong extension_byte={extension_byte}"
         raise ValueError(msg)
