@@ -170,7 +170,6 @@ fixable = ["I", "ICN", "ISC"]
 "tests/*.py" = [
     "ANN201",  # https://docs.astral.sh/ruff/rules/missing-return-type-undocumented-public-function/
     "D",
-    "ERA",
     "FBT001",  # https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
     "PT011",  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
     "S",

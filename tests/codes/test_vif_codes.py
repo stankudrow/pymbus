@@ -49,7 +49,7 @@ def test_wrong_extension_bit_value():
 @pytest.mark.parametrize(
     ("vif", "coef", "kind", "unit"),
     [
-        # Energy (Watt * hour)
+        # Energy (Watt * hour)  # noqa: ERA001
         (
             VIF(0b0000_0000),
             1e-3,
@@ -98,7 +98,7 @@ def test_wrong_extension_bit_value():
             VIFCodeKind.energy,
             VIFCodeUnit.watt_hour,
         ),
-        # Energy (Joule)
+        # Energy (Joule)  # noqa: ERA001
         (VIF(0b0000_1000), 1e0, VIFCodeKind.energy, VIFCodeUnit.joule),
         (VIF(0b0000_1001), 1e1, VIFCodeKind.energy, VIFCodeUnit.joule),
         (VIF(0b0000_1010), 1e2, VIFCodeKind.energy, VIFCodeUnit.joule),
@@ -156,7 +156,7 @@ def test_wrong_extension_bit_value():
             VIFCodeKind.volume,
             VIFCodeUnit.meter_cubic,
         ),
-        # Mass (Kilogram)
+        # Mass (Kilogram)  # noqa: ERA001
         (VIF(0b0001_1000), 1e-3, VIFCodeKind.mass, VIFCodeUnit.kilogram),
         (VIF(0b0001_1001), 1e-2, VIFCodeKind.mass, VIFCodeUnit.kilogram),
         (VIF(0b0001_1010), 1e-1, VIFCodeKind.mass, VIFCodeUnit.kilogram),
@@ -205,7 +205,7 @@ def test_wrong_extension_bit_value():
             VIFCodeKind.operating_time,
             VIFCodeUnit.second,
         ),
-        # Power (Watt)
+        # Power (Watt)  # noqa: ERA001
         (VIF(0b0010_1000), 1e-3, VIFCodeKind.power, VIFCodeUnit.watt),
         (VIF(0b0010_1001), 1e-2, VIFCodeKind.power, VIFCodeUnit.watt),
         (VIF(0b0010_1010), 1e-1, VIFCodeKind.power, VIFCodeUnit.watt),
@@ -214,7 +214,7 @@ def test_wrong_extension_bit_value():
         (VIF(0b0010_1101), 1e2, VIFCodeKind.power, VIFCodeUnit.watt),
         (VIF(0b0010_1110), 1e3, VIFCodeKind.power, VIFCodeUnit.watt),
         (VIF(0b0010_1111), 1e4, VIFCodeKind.power, VIFCodeUnit.watt),
-        # Power (Joule/hour)
+        # Power (Joule/hour)  # noqa: ERA001
         (
             VIF(0b0011_0000),
             1e0,
@@ -559,7 +559,7 @@ def test_wrong_extension_bit_value():
             VIFCodeKind.external_temperature,
             VIFCodeUnit.celsius,
         ),
-        # Pressure (bar)
+        # Pressure (bar)  # noqa: ERA001
         (VIF(0b0110_1000), 1e-3, VIFCodeKind.pressure, VIFCodeUnit.bar),
         (VIF(0b0110_1001), 1e-2, VIFCodeKind.pressure, VIFCodeUnit.bar),
         (VIF(0b0110_1010), 1e-1, VIFCodeKind.pressure, VIFCodeUnit.bar),
