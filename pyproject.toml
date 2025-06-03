@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pymbus"
-version = "0.4.0"
+version = "0.5.0"
 description = "Python Meter-Bus codec."
 authors = [
     { name = "Stanley Kudrow", email = "stankudrow@reply.no" }
@@ -52,7 +52,7 @@ omit = ["tests"]
 source = ["src"]
 
 [tool.coverage.report]
-fail_under = 90
+fail_under = 95
 precision = 0
 skip_covered = true
 skip_empty = true
@@ -170,7 +170,6 @@ fixable = ["I", "ICN", "ISC"]
 "tests/*.py" = [
     "ANN201",  # https://docs.astral.sh/ruff/rules/missing-return-type-undocumented-public-function/
     "D",
-    "ERA",
     "FBT001",  # https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
     "PT011",  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
     "S",

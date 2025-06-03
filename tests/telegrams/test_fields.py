@@ -286,16 +286,16 @@ class TestVIF:
         assert vif.extension == ext_bit
 
     @pytest.mark.parametrize(
-        ("byte", "unit"),
+        ("byte", "data"),
         [
             (0b1111_1111, 0b0111_1111),
             (0b0011_1111, 0b0011_1111),
         ],
     )
-    def test_vif_unit(self, byte: int, unit: int):
+    def test_vif_data_extraction(self, byte: int, data: int):
         vif = VIF(byte)
 
-        assert vif.unit == unit
+        assert vif.data == data
 
 
 class TestVIFE:
@@ -312,13 +312,13 @@ class TestVIFE:
         assert vife.extension == ext_bit
 
     @pytest.mark.parametrize(
-        ("byte", "unit"),
+        ("byte", "data"),
         [
             (0b1111_1111, 0b0111_1111),
             (0b0011_1111, 0b0011_1111),
         ],
     )
-    def test_vife_unit(self, byte: int, unit: int):
+    def test_vife_data_extraction(self, byte: int, data: int):
         vife = VIFE(byte)
 
-        assert vife.unit == unit
+        assert vife.data == data
