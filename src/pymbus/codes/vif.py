@@ -1617,40 +1617,36 @@ def _get_code(value: int, /, source: Mapping[int, VIFCode]) -> None | VIFCode:
     return source.get(int(vif))
 
 
-class VIFCodeTable:
-    """VIFCode Table Manager class."""
+def get_code(
+    value: int | VIF | VIFE,
+    *,
+    extension_byte: None | int | VIF = None,
+) -> None | VIFCode:
+    """Return VIFCode according to `value` byte.
 
-    def __call__(
-        self,
-        value: int | VIF | VIFE,
-        *,
-        extension_byte: None | int | VIF = None,
-    ) -> None | VIFCode:
-        """Return VIFCode according to `value` byte.
+    Parameters
+    ----------
+    value : int | VIF
+        a byte value that can match a certain VIF code
+    extension_byte : None | int | VIFE, default None
+        get a VIFCode from an extended table
+        according to `extension_byte` value
 
-        Parameters
-        ----------
-        value : int | VIF
-            a byte value that can match a certain VIF code
-        extension_byte : None | int | VIFE, default None
-            get a VIFCode from an extended table
-            according to `extension_byte` value
+    Raises
+    ------
+    ValueError
+        if extension code is invalid
 
-        Raises
-        ------
-        ValueError
-            if extension code is invalid
-
-        Returns
-        -------
-        None | VIFCode
-        """
-        value = int(value)  # see type hints for mapping -> int key
-        if extension_byte is None:
-            return _get_code(value, source=_VIF_CODE_MAP)
-        if extension_byte == 0xFB:
-            return _get_code(value, source=_VIF_CODE_FB_EXTENSION_MAP)
-        if extension_byte == 0xFD:
-            return _get_code(value, source=_VIF_CODE_FD_EXTENSION_MAP)
-        msg = f"wrong extension_byte={extension_byte}"
-        raise ValueError(msg)
+    Returns
+    -------
+    None | VIFCode
+    """
+    value = int(value)  # see type hints for mapping -> int key
+    if extension_byte is None:
+        return _get_code(value, source=_VIF_CODE_MAP)
+    if extension_byte == 0xFB:
+        return _get_code(value, source=_VIF_CODE_FB_EXTENSION_MAP)
+    if extension_byte == 0xFD:
+        return _get_code(value, source=_VIF_CODE_FD_EXTENSION_MAP)
+    msg = f"wrong extension_byte={extension_byte}"
+    raise ValueError(msg)

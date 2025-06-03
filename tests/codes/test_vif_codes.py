@@ -3,8 +3,8 @@ import pytest
 from pymbus.codes.vif import (
     VIFCode,
     VIFCodeKind,
-    VIFCodeTable,
     VIFCodeUnit,
+    get_code,
 )
 from pymbus.exceptions import MBusValidationError
 from pymbus.telegrams.fields import ValueInformationField as VIF
@@ -20,30 +20,28 @@ def _assert_vif_code(
 ) -> None:
     __tracebackhide__ = True
 
-    table = VIFCodeTable()
-
     answer = VIFCode(
         coef=coef,
         kind=kind,
         unit=unit,
     )
 
-    assert table(vif, extension_byte=extension_byte) == answer
-    assert table(0x80 | vif, extension_byte=extension_byte) == answer
+    assert get_code(vif, extension_byte=extension_byte) == answer
+    assert get_code(0x80 | vif, extension_byte=extension_byte) == answer
 
 
 def test_nonbyte_value_selection():
     with pytest.raises(MBusValidationError):
-        VIFCodeTable()(266)
+        get_code(266)
 
 
 def test_vif_code_absence():
-    assert VIFCodeTable()(VIF(0b0111_1011)) is None
+    assert get_code(VIF(0b0111_1011)) is None
 
 
 def test_wrong_extension_bit_value():
     with pytest.raises(ValueError, match="wrong extension_byte"):
-        VIFCodeTable()(VIF(0), extension_byte=-1)
+        get_code(VIF(0), extension_byte=-1)
 
 
 @pytest.mark.parametrize(
