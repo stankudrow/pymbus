@@ -5,10 +5,11 @@
 - update VIF codes: tables and utils ([PR-22](https://github.com/stankudrow/pymbus/pull/22)):
   - remove the "code" attribute from the VIFCode dataclass;
   - rename the `VIFCodeDescription` enum to `VIFCodeKind`;
-  - introduce the `VIFTablet` class responsible for VIF code selection;
-  - remove `get_vif_code` function in favour of the the `VIFTablet` class;
+  - rename `get_vif_code` function to `get_code` with changed signature:
+    - it accepts `extension_byte` to access extension VIF codes;
+    - type hints changed;
   - fix VIF code selection regardless the extension (MSB) bit is set or not;
-  - add VIF codes for **0xFB** code extension byte;
+  - add VIF codes for **0xFB** and **0xFD** extension bytes;
   - rename the "unit" attribute of the `ValueInformationField` class to "data";
   - add a minor optimisation: one VIFCode dataclass instance is used for all reserved codes.
 
