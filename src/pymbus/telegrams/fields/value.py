@@ -24,7 +24,7 @@ class ValueInformationField(TelegramField):
         self._ext = int((byte & self.EXTENSION_BIT_MASK) != 0)
 
     @property
-    def unit(self) -> int:
+    def data(self) -> int:
         return self._data
 
     @property
@@ -53,7 +53,7 @@ class ValueInformationFieldExtension(TelegramField):
         self._ext = int((byte & self.EXTENSION_BIT_MASK) != 0)
 
     @property
-    def unit(self) -> int:
+    def data(self) -> int:
         return self._data
 
     @property
