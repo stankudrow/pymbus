@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.5.1
+
+- update integer parsers: `parse_bool`, `parse_int` and `parse_uint` ([PR-24](https://github.com/stankudrow/pymbus/pull/24)):
+  - add the `byteorder` option to the given integer parsers
+  - these functions rely on the `int.from_bytes` method
+
 ## v0.5.0
 
 - update VIF codes: tables and utils ([PR-22](https://github.com/stankudrow/pymbus/pull/22)):

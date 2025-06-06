@@ -44,6 +44,7 @@ import struct
 from collections.abc import Iterable
 from contextlib import suppress
 from datetime import date, datetime, time, timezone, tzinfo
+from typing import Literal
 
 from pymbus.constants import BIG_ENDIAN, NIBBLE
 from pymbus.exceptions import MBusError, MBusLengthError
@@ -100,35 +101,24 @@ def parse_bcd_uint(ibytes: BytesType) -> int:
     return number
 
 
-def parse_int(ibytes: BytesType) -> int:
+def parse_int(
+    ibytes: BytesType, *, byteorder: Literal["big", "little"] = BIG_ENDIAN
+) -> int:
     """Returns the signed integer from a byte sequence.
 
     The "Binary Integer" type = "Type B".
-    The bytes are parsed along the Big endian order.
+    The bytes are parsed along the Big endian order by default.
 
+    Notes
+    -----
     The function is greedy.
-
-    Notes:
-    ------
-    An older implementation:
-    ```python
-    neg_sign = bytez[-1] & 0x80
-    value = 0
-    for byte in reversed(bytez):
-        value = value << BYTE
-        if neg_sign:
-            value += byte ^ 0xFF  # two's compliment
-        else:
-            value += byte
-    if neg_sign:
-        value = (-value) - 1  # two's compliment
-    return value
-    ```
 
     Parameters
     ----------
     ibytes: BytesType
         the sequence of bytes for "Type B" parsing
+    byteorder : Literal["big", "little"], default "big"
+        the byte order (endianness)
 
     Raises
     ------
@@ -141,21 +131,27 @@ def parse_int(ibytes: BytesType) -> int:
     """
     bytez = _validate_non_empty_bytes(ibytes)
 
-    return int.from_bytes(
-        bytes(reversed(bytez)), byteorder=BIG_ENDIAN, signed=True
-    )
+    return int.from_bytes(bytes(bytez), byteorder=byteorder, signed=True)
 
 
-def parse_uint(ibytes: BytesType) -> int:
+def parse_uint(
+    ibytes: BytesType, *, byteorder: Literal["big", "little"] = BIG_ENDIAN
+) -> int:
     """Returns the unsigned integer from a byte sequence.
 
     The "Unsigned Integer" type = "Type C".
-    The bytes are parsed along the Big endian order.
+    The bytes are parsed along the Big endian order by default.
+
+    Notes
+    -----
+    The function is greedy.
 
     Parameters
     ----------
     ibytes: BytesType
         the sequence of bytes for "Type C" parsing
+    byteorder : Literal["big", "little"], default "big"
+        the byte order (endianness)
 
     Raises
     ------
@@ -168,24 +164,26 @@ def parse_uint(ibytes: BytesType) -> int:
     """
     bytez = _validate_non_empty_bytes(ibytes)
 
-    return int.from_bytes(
-        bytes(reversed(bytez)), byteorder=BIG_ENDIAN, signed=False
-    )
+    return int.from_bytes(bytes(bytez), byteorder=byteorder, signed=False)
 
 
 ## boolean section
 
 
-def parse_bool(ibytes: BytesType) -> bool:
+def parse_bool(
+    ibytes: BytesType, *, byteorder: Literal["big", "little"] = BIG_ENDIAN
+) -> bool:
     """Returns the boolean from a byte sequence.
 
     The "Boolean" type = "Type D".
-    The bytes are parsed along the Big endian order.
+    The bytes are parsed along the Big endian order by default.
 
     Parameters
     ----------
     ibytes: BytesType
         the sequence of bytes for "Type D" parsing
+    byteorder : Literal["big", "little"], default "big"
+        the byte order (endianness)
 
     Raises
     ------
@@ -196,7 +194,7 @@ def parse_bool(ibytes: BytesType) -> bool:
     -------
     bool
     """
-    return bool(parse_uint(ibytes))
+    return bool(parse_uint(ibytes, byteorder=byteorder))
 
 
 ## floating point (real) numbers section
