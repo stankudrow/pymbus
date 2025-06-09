@@ -2,6 +2,7 @@ from collections.abc import Iterable
 
 import pytest
 
+from pymbus.constants import BIG_ENDIAN, LITTLE_ENDIAN
 from pymbus.mbtypes import parse_bool
 
 
@@ -16,4 +17,5 @@ from pymbus.mbtypes import parse_bool
     ],
 )
 def test_parse_boolean(it: Iterable, answer: int):
-    assert parse_bool(bytes(it)) == answer
+    for endianness in (BIG_ENDIAN, LITTLE_ENDIAN):
+        assert parse_bool(bytes(it), byteorder=endianness) == answer

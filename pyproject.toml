@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pymbus"
-version = "0.5.0"
+version = "0.5.1"
 description = "Python Meter-Bus codec."
 authors = [
     { name = "Stanley Kudrow", email = "stankudrow@reply.no" }
@@ -174,3 +174,4 @@ fixable = ["I", "ICN", "ISC"]
     "PT011",  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
     "S",
 ]
+"tests/mbus_types/test_ints.py" = ["ERA001"]
