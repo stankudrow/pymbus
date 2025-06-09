@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from math import isclose
 from typing import Literal
 
 import pytest
@@ -119,3 +120,24 @@ def test_parse_uint_bytes(
 def test_parse_uint_empty():
     with pytest.raises(MBusError):
         parse_uint(bytes([]))
+
+
+@pytest.mark.parametrize(
+    ("data", "answer"),
+    [
+        (b"\x00\x00\x1f\x40", 8000),
+        (b"\x00\x00\x27\xb6", 10166),
+        (b"\x00\x00\x17\xf4", 6132),
+        (b"\x00\x00\x00\x2f", 47),
+        (b"\x00\x00\x0c\x72", 3186),
+        (b"\x07\x6d", 1901),
+        (b"\x07\x12", 1810),
+        (b"\x00\x00\x4a\x45", 19013),
+    ],
+)
+def test_positive_ints(data: bytes, answer: float):
+    int_res = parse_int(data)
+    uint_res = parse_uint(data)
+
+    assert isclose(int_res, answer)
+    assert isclose(uint_res, answer)
